@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useParams } from "react-router";
 import { LINKS } from "../config";
-import { Bean, Check, Search } from "../components/Icons";
+import { Bean, Bell, Check, Copy, Search } from "../components/Icons";
 import { Mark } from "../components/Logo";
 import { useReport, WalletCard } from "../components/WalletCard";
 import { AppLink, Avatar, Card, Empty, PageHead } from "../components/ui";
@@ -9,6 +9,8 @@ import { useLive } from "../lib/api";
 import { acct, ago, isAccountId, near } from "../lib/format";
 import { useNow } from "../lib/hooks";
 import { setMe, useMe } from "../lib/me";
+import { disableReminders, enableReminders, useReminders } from "../lib/remind";
+import { useToast } from "../lib/toast";
 
 /** No wallet to connect: type your account once, it's remembered on this device. */
 export default function Me() {
@@ -59,16 +61,33 @@ function WalletView({ id, mine }: { id: string; mine: boolean }) {
   const { rep, err } = useReport(id);
   const me = useMe();
   const now = useNow();
+  const toast = useToast();
+  const remind = useReminders();
+  const share = async () => {
+    const url = `${location.origin}/wallet/${id}`;
+    const nav = navigator as Navigator & { share?: (d: { title: string; url: string }) => Promise<void> };
+    if (nav.share) return nav.share({ title: `${acct(id, 24)} on dcaf`, url }).catch(() => {});
+    await navigator.clipboard?.writeText(url);
+    toast({ tone: "good", title: "Link copied" });
+  };
   if (err) return <Card><Empty title="Couldn't load" hint={err} /></Card>;
   if (!rep || !snap) return <div className="wcard skeleton" style={{ height: 420 }} />;
   return (
     <>
       <PageHead kicker={mine ? "My streak" : "Wallet"} title={acct(id, 24)}>
-        {mine ? (
-          <button className="btn btn-soft btn-sm" onClick={() => setMe(null)}>Change</button>
-        ) : (
-          !me && <button className="btn btn-soft btn-sm" onClick={() => setMe(id)}><Check size={15} /> This is me</button>
-        )}
+        <div className="row-gap">
+          {mine && (
+            <button className={`btn btn-soft btn-sm${remind ? " on" : ""}`} onClick={() => (remind ? disableReminders() : void enableReminders())} aria-pressed={remind}>
+              <Bell size={15} /> {remind ? "Reminding" : "Remind me"}
+            </button>
+          )}
+          <button className="btn btn-soft btn-sm" onClick={() => void share()}><Copy size={15} /> Share</button>
+          {mine ? (
+            <button className="btn btn-soft btn-sm" onClick={() => setMe(null)}>Change</button>
+          ) : (
+            !me && <button className="btn btn-soft btn-sm" onClick={() => setMe(id)}><Check size={15} /> This is me</button>
+          )}
+        </div>
       </PageHead>
       <WalletCard rep={rep} snap={snap} mine={mine} />
       {rep.trades && rep.trades.length > 0 && (

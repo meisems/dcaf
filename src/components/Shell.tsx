@@ -1,13 +1,15 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { NavLink, Outlet, ScrollRestoration, useLocation, useNavigate } from "react-router";
-import { BRAND, LINKS, SYMBOL } from "../config";
-import { prefetchWallet, useLive } from "../lib/api";
+import { BRAND, LINKS, SYMBOL, TOKEN } from "../config";
+import { prefetchWallet, useLive, type WalletReport } from "../lib/api";
+import { celebrate } from "../lib/celebrate";
+import { notify, useReminders } from "../lib/remind";
 import { prefetchPath } from "../lib/prefetch";
 import { acct, isAccountId, mmss, near } from "../lib/format";
 import { setMe, useMe } from "../lib/me";
-import { useNow, useTheme } from "../lib/hooks";
+import { toggleTheme, useNow, useTheme } from "../lib/hooks";
 import { useToast } from "../lib/toast";
-import { Bean, Book, Coins, Home, Pulse, Search, Trophy } from "./Icons";
+import { Bean, Book, Coins, Copy, Cross, Home, Pulse, Search, Trophy } from "./Icons";
 import { Clock, useWindowAnim } from "./Clock";
 import { Logo } from "./Logo";
 import { useReport } from "./WalletCard";
@@ -22,10 +24,13 @@ const LINKS_NAV = [
 
 export function Shell() {
   const [search, setSearch] = useState(false);
-  const ui = useMemo(() => ({ openSearch: () => setSearch(true) }), []);
+  const me = useMe();
+  const { rep: mine } = useReport(me);
+  const ui = useMemo(() => ({ openSearch: () => setSearch(true), mine }), [mine]);
   const loc = useLocation();
   useTabTitle();
   useRoundToasts();
+  useStreakReminder(mine);
 
   // cards light up under the cursor; the hero glow trails it
   useEffect(() => {
@@ -55,7 +60,8 @@ export function Shell() {
 
   useEffect(() => {
     const k = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+      const typing = /^(INPUT|TEXTAREA|SELECT)$/.test((e.target as HTMLElement).tagName);
+      if (((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") || (e.key === "/" && !typing)) {
         e.preventDefault();
         setSearch(true);
       }
@@ -82,7 +88,7 @@ export function Shell() {
 function Nav() {
   const [theme, toggle] = useTheme();
   const me = useMe();
-  const { rep } = useReport(me);
+  const { mine: rep } = useUi();
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
     const on = () => setScrolled(window.scrollY > 12);
@@ -203,8 +209,12 @@ function SearchButton() {
   );
 }
 
+type Cmd = { key: string; label: string; hint?: string; icon: React.ReactNode; run: () => void };
+
+/** ⌘K or "/": jump to a page, run an action, or open any wallet. */
 function SearchBox({ onClose }: { onClose: () => void }) {
   const me = useMe();
+  const toast = useToast();
   const [q, setQ] = useState("");
   const [bad, setBad] = useState(false);
   const [sel, setSel] = useState(0);
@@ -212,45 +222,101 @@ function SearchBox({ onClose }: { onClose: () => void }) {
   const nav = useNavigate();
   const { snap } = useLive();
   const v = q.trim().toLowerCase();
-  const hits = v.length > 1 ? (snap?.board.streaks ?? []).map((r) => r.id).filter((id) => id.includes(v)).slice(0, 6) : [];
   const close = (then?: () => void) => {
     setLeaving(true);
     setTimeout(() => (onClose(), then?.()), 160);
   };
-  const go = (id: string) => {
-    const s = id.trim().toLowerCase();
-    if (!isAccountId(s)) return setBad(true);
-    close(() => nav(`/wallet/${s}`, { viewTransition: true }));
-  };
+  const go = (to: string) => close(() => nav(to, { viewTransition: true }));
+
+  const pages: Cmd[] = [
+    { key: "p:/", label: "Home", icon: <Home size={17} />, run: () => go("/") },
+    { key: "p:/live", label: "Live", icon: <Pulse size={17} />, run: () => go("/live") },
+    { key: "p:/board", label: "Leaderboard", icon: <Trophy size={17} />, run: () => go("/board") },
+    { key: "p:/rounds", label: "Rounds", icon: <Coins size={17} />, run: () => go("/rounds") },
+    { key: "p:/me", label: "My streak", icon: <Bean size={17} />, run: () => go("/me") },
+    { key: "p:/docs", label: "Docs", icon: <Book size={17} />, run: () => go("/docs") },
+  ];
+  const actions: Cmd[] = [
+    { key: "a:theme", label: "Switch theme", icon: <ThemeIcon />, run: () => close(() => toggleTheme()) },
+    { key: "a:buy", label: `Buy $${SYMBOL}`, hint: "↗", icon: <Bean size={17} />, run: () => close(() => void window.open(LINKS.buy, "_blank", "noopener")) },
+    {
+      key: "a:copy", label: "Copy token address", icon: <Copy size={17} />,
+      run: () => close(() => void navigator.clipboard?.writeText(TOKEN).then(() => toast({ tone: "good", title: "Copied", body: TOKEN }))),
+    },
+    ...(me ? [{ key: "a:untrack", label: "Stop tracking my wallet", icon: <Cross size={17} />, run: () => close(() => (setMe(null), toast({ tone: "info", title: "Not tracking" }))) }] : []),
+  ];
+  // everyone the engine has seen: ranked wallets first, then anyone on the tape
+  const known = useMemo(() => {
+    const b = snap?.board;
+    const ids = [...(b?.next ?? []), ...(b?.streaks ?? []), ...(b?.allTime ?? [])].map((r) => r.id);
+    for (const t of [...(snap?.trades ?? [])].reverse()) ids.push(t.w);
+    return [...new Set(ids)];
+  }, [snap]);
+  const wallets: Cmd[] = (v.length > 1 ? known.filter((id) => id.includes(v)).slice(0, 5) : []).map((id) => ({
+    key: `w:${id}`, label: id, icon: <Avatar id={id} size={18} />, run: () => go(`/wallet/${id}`),
+  }));
+  const direct: Cmd[] =
+    isAccountId(v) && (v.includes(".") || /^[0-9a-f]{64}$/.test(v)) && !wallets.some((w) => w.label === v)
+      ? [
+          { key: `w:${v}`, label: v, hint: "open", icon: <Search size={17} />, run: () => go(`/wallet/${v}`) },
+          ...(!me ? [{ key: "a:track", label: `Track ${v} as me`, icon: <Bean size={17} />, run: () => (setMe(v), go("/me")) }] : []),
+        ]
+      : [];
+  const match = (c: Cmd) => !v || c.label.toLowerCase().includes(v);
+  const groups: [string, Cmd[]][] = [
+    ["Wallets", [...direct, ...wallets]],
+    ["Go to", pages.filter(match)],
+    ["Actions", actions.filter(match)],
+  ];
+  const items = groups.flatMap(([, g]) => g);
+  const selKey = items[sel]?.key;
+
   useEffect(() => setSel(0), [v]);
   useEffect(() => {
-    if (hits[sel]) prefetchWallet(hits[sel]);
-  }, [hits, sel]);
+    if (selKey?.startsWith("w:")) prefetchWallet(selKey.slice(2));
+    if (selKey?.startsWith("p:")) prefetchPath(selKey.slice(2));
+  }, [selKey]);
   const onKey = (e: React.KeyboardEvent) => {
     if (e.key === "Escape") return close();
-    if (!hits.length) return;
-    if (e.key === "ArrowDown") (e.preventDefault(), setSel((x) => (x + 1) % hits.length));
-    if (e.key === "ArrowUp") (e.preventDefault(), setSel((x) => (x - 1 + hits.length) % hits.length));
+    if (!items.length) return;
+    if (e.key === "ArrowDown") (e.preventDefault(), setSel((x) => (x + 1) % items.length));
+    if (e.key === "ArrowUp") (e.preventDefault(), setSel((x) => (x - 1 + items.length) % items.length));
   };
+  const submit = () => {
+    const c = items[sel];
+    if (c) return c.run();
+    if (v) setBad(true);
+  };
+  let idx = -1;
   return (
     <div className={`sheet-back top${leaving ? " leaving" : ""}`} onClick={() => close()}>
-      <form className="palette" onClick={(e) => e.stopPropagation()} onSubmit={(e) => (e.preventDefault(), go(hits[sel] ?? v))} onKeyDown={onKey}>
+      <form className="palette" onClick={(e) => e.stopPropagation()} onSubmit={(e) => (e.preventDefault(), submit())} onKeyDown={onKey} role="dialog" aria-label="Command palette">
         <div className="palette-in">
           <Search size={18} />
-          <input autoFocus value={q} onChange={(e) => (setQ(e.target.value), setBad(false))} placeholder="alice.near" spellCheck={false} autoCapitalize="off" aria-label="NEAR account" aria-invalid={bad} />
+          <input autoFocus value={q} onChange={(e) => (setQ(e.target.value), setBad(false))} placeholder="Wallets, pages, actions…" spellCheck={false} autoCapitalize="off" aria-label="Command" aria-invalid={bad} />
           <kbd>esc</kbd>
         </div>
-        {bad && <p className="form-err">Not a NEAR account id</p>}
-        {hits.map((h, k) => (
-          <button type="button" key={h} className={`palette-hit${k === sel ? " sel" : ""}`} onMouseEnter={() => setSel(k)} onClick={() => go(h)}>
-            <Avatar id={h} size={20} /> <span className="mono">{h}</span>{k === sel && <kbd>↵</kbd>}
-          </button>
-        ))}
-        {!me && isAccountId(v) && (
-          <button type="button" className="palette-hit me" onClick={() => (setMe(v), close(() => nav("/me", { viewTransition: true })))}>
-            <Bean size={18} /> <span>Track <b className="mono">{v}</b> as me</span>
-          </button>
-        )}
+        {bad && <p className="form-err">No match</p>}
+        <div className="palette-list">
+          {groups.map(([title, g]) =>
+            g.length ? (
+              <div key={title} className="palette-group">
+                <small>{title}</small>
+                {g.map((c) => {
+                  idx += 1;
+                  const k = idx;
+                  return (
+                    <button type="button" key={c.key} className={`palette-hit${k === sel ? " sel" : ""}`} onMouseEnter={() => setSel(k)} onClick={c.run}>
+                      <span className="ph-ic">{c.icon}</span>
+                      <span className={c.key.startsWith("w:") ? "mono" : ""}>{c.label}</span>
+                      {k === sel ? <kbd>↵</kbd> : c.hint ? <kbd>{c.hint}</kbd> : null}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : null,
+          )}
+        </div>
       </form>
     </div>
   );
@@ -314,11 +380,33 @@ function useRoundToasts() {
     if (!top || snap?.info.syncing) return;
     if (last.current !== null && top.no > last.current) {
       const mine = account ? top.payouts.find((p) => p.w === account) : undefined;
-      if (mine) toast({ tone: "good", title: `+${near(mine.amount)}`, body: `Round #${top.no}` });
+      if (mine) {
+        toast({ tone: "good", title: `+${near(mine.amount)}`, body: `Round #${top.no} · sent to ${acct(mine.w, 16)}` });
+        celebrate();
+      }
       else toast({ tone: "info", title: `Round #${top.no}`, body: top.qualifiers ? `${top.payouts.length} paid · ${near(top.paid)}` : "Stacked to the next" });
     }
     last.current = top.no;
   }, [top, account, toast, snap?.info.syncing]);
+}
+
+/** If reminders are on: one nudge per window when the tracked streak is about to break. */
+function useStreakReminder(mine: WalletReport | null) {
+  const { snap } = useLive();
+  const on = useReminders();
+  const toast = useToast();
+  const now = useNow();
+  const done = useRef(0);
+  const i = snap?.info;
+  useEffect(() => {
+    if (!on || !mine || !i?.started || !i.nextRoundAt) return;
+    const left = i.nextRoundAt - now;
+    const atRisk = mine.status === "waiting" || (mine.status === "idle" && mine.known);
+    if (!atRisk || left > 120 || left <= 0 || done.current === i.windowNo) return;
+    done.current = i.windowNo;
+    const body = mine.streak > 0 ? `Buy within ${mmss(left)} to keep your ${mine.streak}-window streak` : `Buy within ${mmss(left)} to be in round #${i.windowNo}`;
+    if (!notify("Streak at risk", body)) toast({ tone: "info", title: "Streak at risk", body });
+  }, [on, mine, i, now, toast]);
 }
 
 function useTabTitle() {

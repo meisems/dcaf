@@ -1,14 +1,14 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, type LinkProps } from "react-router";
-import { prefetchWallet } from "../lib/api";
+import { prefetchWallet, type WalletReport } from "../lib/api";
 import { prefetchPath } from "../lib/prefetch";
 import type { Status } from "../lib/api";
 import { Flame } from "./Icons";
 
 // ---------------------------------------------------------------- app-wide UI actions
 
-type Ui = { openSearch: () => void };
-export const UiCtx = createContext<Ui>({ openSearch: () => {} });
+type Ui = { openSearch: () => void; mine: WalletReport | null };
+export const UiCtx = createContext<Ui>({ openSearch: () => {}, mine: null });
 export const useUi = () => useContext(UiCtx);
 
 // ---------------------------------------------------------------- links that are already there

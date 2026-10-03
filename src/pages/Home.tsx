@@ -1,10 +1,12 @@
 
 import { LINKS, SYMBOL } from "../config";
-import { ArrowRight, Bean, Coins, Flame, Lock, Users, Vault } from "../components/Icons";
+import { ArrowRight, Bean, Bell, Coins, Flame, Lock, Users, Vault } from "../components/Icons";
 import { Orbit } from "../components/Orbit";
-import { AppLink, Avatar, Card, Empty, More, Num, Streak } from "../components/ui";
+import { AppLink, Avatar, Card, Empty, More, Num, StatusPill, Streak, useUi } from "../components/ui";
 import { useLive, type Snapshot } from "../lib/api";
-import { acct, ago, near, usd } from "../lib/format";
+import { acct, ago, mmss, near, usd } from "../lib/format";
+import { useMe } from "../lib/me";
+import { disableReminders, enableReminders, useReminders } from "../lib/remind";
 import { useFlip } from "../lib/flip";
 import { useNow } from "../lib/hooks";
 
@@ -37,6 +39,7 @@ export default function Home() {
         <div className="hero-orbit">{snap ? <Orbit snap={snap} /> : <div className="orbit-card skeleton" />}</div>
       </section>
 
+      {snap && <MeStrip snap={snap} now={now} />}
       {snap && snap.trades.length > 0 && <Tape snap={snap} now={now} />}
 
       <section className="kpis" data-reveal>
@@ -87,6 +90,47 @@ export default function Home() {
         </Card>
       </section>
     </>
+  );
+}
+
+/** Your wallet in one line: streak, where you stand, what to do next. */
+function MeStrip({ snap, now }: { snap: Snapshot; now: number }) {
+  const me = useMe();
+  const { mine } = useUi();
+  const remind = useReminders();
+  if (!me)
+    return (
+      <AppLink to="/me" className="me-strip ghost" data-reveal>
+        <Bean size={18} /> <span>Track your wallet</span> <small className="muted">no connect</small> <ArrowRight size={16} />
+      </AppLink>
+    );
+  if (!mine) return <div className="me-strip skeleton" />;
+  const i = snap.info;
+  const left = Math.max(0, i.nextRoundAt - now);
+  const topN = i.rules.topN;
+  const msg =
+    mine.status === "dcaing"
+      ? mine.rank !== null && mine.rank <= topN ? <>#{mine.rank} · <b>≈ {near(mine.est)}</b></> : <>#{mine.rank} · outside top {topN}</>
+      : mine.status === "waiting" ? <>Buy within <b className="mono">{mmss(left)}</b></>
+      : mine.status === "notyet" ? <>{near(i.rules.minTotal - mine.total)} more to count</>
+      : mine.status === "out" ? <>Out for good</>
+      : <>Buy within <b className="mono">{mmss(left)}</b></>;
+  const canBuy = mine.status !== "out" && mine.status !== "dcaing";
+  return (
+    <div className={`me-strip st-${mine.status}`}>
+      <AppLink to="/me" className="ms-who">
+        <Avatar id={me} size={34} />
+        <span><b className="mono">{acct(me, 18)}</b><StatusPill s={mine.known ? mine.status : "idle"} /></span>
+      </AppLink>
+      <span className="ms-streak"><Streak n={mine.liveStreak} size={18} /></span>
+      <span className="ms-msg">{msg}</span>
+      <span className="ms-actions">
+        <button className={`icon-btn${remind ? " on" : ""}`} onClick={() => (remind ? disableReminders() : void enableReminders())} aria-pressed={remind} aria-label={remind ? "Reminders on" : "Remind me before my streak breaks"} title={remind ? "Reminders on" : "Remind me"}>
+          <Bell size={17} />
+        </button>
+        {canBuy && <a className="btn btn-grad btn-sm" href={LINKS.buy} target="_blank" rel="noreferrer">Buy ↗</a>}
+      </span>
+    </div>
   );
 }
 

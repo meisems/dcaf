@@ -3,6 +3,7 @@ import { Fragment, useState } from "react";
 import { AppLink, Avatar, Empty, PageHead, StatusPill, Streak } from "../components/ui";
 import { useLive, type BoardRow } from "../lib/api";
 import { acct, near, pct } from "../lib/format";
+import { Search } from "../components/Icons";
 import { useFlip } from "../lib/flip";
 import { useMe } from "../lib/me";
 
@@ -18,11 +19,15 @@ export default function Board() {
   const account = useMe();
   const [tab, setTab] = useState<K>("next");
   const [all, setAll] = useState(false);
+  const [filter, setFilter] = useState("");
   const body = useFlip<HTMLTableSectionElement>(`${tab}:${snap?.board[tab].map((r) => r.id).join()}`);
   if (!snap) return <div className="card skeleton" style={{ height: 480 }} />;
   const topN = snap.info.rules.topN;
+  const f = filter.trim().toLowerCase();
+  const ranked = snap.board[tab].map((r, k) => ({ r, k }));
   const rows = snap.board[tab];
-  const shown = all ? rows : rows.slice(0, 30);
+  const filtered = f ? ranked.filter(({ r }) => r.id.includes(f)) : ranked;
+  const shown = all || f ? filtered : filtered.slice(0, 30);
   const me = account ? rows.findIndex((r) => r.id === account) : -1;
   const max = Math.max(1e-9, ...rows.map((r) => metric(tab, r)));
 
@@ -51,7 +56,17 @@ export default function Board() {
       )}
 
       <section className="card">
-        {me >= 0 && <p className="me-chip">You're <b>#{me + 1}</b>{tab === "next" && me >= topN ? ` · top ${topN} get paid` : ""}</p>}
+        <div className="board-tools">
+          <label className="mini-search">
+            <Search size={15} />
+            <input value={filter} onChange={(e) => setFilter(e.target.value)} placeholder="Filter" spellCheck={false} autoCapitalize="off" aria-label="Filter wallets" />
+          </label>
+          {me >= 0 && (
+            <button className="me-chip" onClick={() => jump(rows[me].id)}>
+              You're <b>#{me + 1}</b>{tab === "next" && me >= topN ? ` · top ${topN} get paid` : ""} <span aria-hidden>↓</span>
+            </button>
+          )}
+        </div>
         {rows.length === 0 ? (
           <Empty title={tab === "next" ? "No one in this window" : "Nothing yet"} hint={tab === "next" ? "Be the first buy" : undefined} />
         ) : (
@@ -66,7 +81,10 @@ export default function Board() {
                 </tr>
               </thead>
               <tbody ref={body}>
-                {shown.map((r, k) => (
+                {f && !shown.length && (
+                  <tr><td colSpan={6} className="muted center">No wallet matches “{filter}”</td></tr>
+                )}
+                {shown.map(({ r, k }) => (
                   <Fragment key={r.id}>
                     {tab === "next" && k === topN && (
                       <tr className="cutoff"><td colSpan={6}><span>Top {topN} get paid · below here earns nothing this round</span></td></tr>
@@ -89,10 +107,23 @@ export default function Board() {
             </table>
           </div>
         )}
-        {rows.length > 30 && <button className="btn btn-soft more" onClick={() => setAll((a) => !a)}>{all ? "Less" : `All ${rows.length}`}</button>}
+        {!f && rows.length > 30 && <button className="btn btn-soft more board-more" onClick={() => setAll((a) => !a)}>{all ? "Less" : `All ${rows.length}`}</button>}
       </section>
     </>
   );
+}
+
+/** Scroll to a row and make it glow, showing all rows first if it's further down. */
+function jump(id: string) {
+  const find = () => document.querySelector<HTMLElement>(`[data-flip="${CSS.escape(id)}"]`);
+  const go = (el: HTMLElement) => {
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.animate([{ backgroundColor: "rgba(0, 236, 151, 0.28)" }, { backgroundColor: "transparent" }], { duration: 1800, easing: "ease-out" });
+  };
+  const el = find();
+  if (el) return go(el);
+  (document.querySelector(".board-more") as HTMLButtonElement | null)?.click();
+  requestAnimationFrame(() => requestAnimationFrame(() => { const e = find(); if (e) go(e); }));
 }
 
 const metric = (tab: K, r: BoardRow) => (tab === "allTime" ? r.earned : tab === "streaks" ? r.liveStreak : r.share);

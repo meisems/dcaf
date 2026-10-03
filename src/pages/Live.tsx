@@ -13,6 +13,7 @@ export default function Live() {
   const { snap } = useLive();
   const now = useNow();
   const [tab, setTab] = useState<"dca" | "all">("dca");
+  const [side, setSide] = useState<"all" | "buy" | "sell">("all");
 
   // every wallet that traded in the last 24h, with what we know about its streak
   const traders = useMemo<Trader[]>(() => {
@@ -101,10 +102,19 @@ export default function Live() {
           )}
         </Card>
 
-        <Card title="Tape">
+        <Card
+          title="Tape"
+          action={
+            <div className="seg" role="tablist" aria-label="Show">
+              {(["all", "buy", "sell"] as const).map((s) => (
+                <button key={s} role="tab" aria-selected={side === s} className={side === s ? "on" : ""} onClick={() => setSide(s)}>{s === "all" ? "All" : s === "buy" ? "Buys" : "Sells"}</button>
+              ))}
+            </div>
+          }
+        >
           {snap.trades.length ? (
             <ul className="feed tall">
-              {snap.trades.slice(-40).reverse().map((t) => (
+              {snap.trades.filter((t) => side === "all" || t.side === side).slice(-40).reverse().map((t) => (
                 <li key={t.tx + t.w} className={t.side}>
                   <span className={`side ${t.side}`}>{t.side === "buy" ? "Buy" : "Sell"}</span>
                   <AppLink to={`/wallet/${t.w}`} className="mono">{acct(t.w, 16)}</AppLink>
