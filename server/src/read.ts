@@ -73,6 +73,7 @@ export class Reader {
       syncing: !e.lastBlockT || now - e.lastBlockT > CFG.liveLagSec,
       lagSec: e.lastBlockT ? Math.max(0, now - e.lastBlockT) : 0,
       dryRun: CFG.dryRun,
+      test: CFG.test,
       updatedAt: now,
       windowNo: no,
       windowStart: w?.start ?? 0,

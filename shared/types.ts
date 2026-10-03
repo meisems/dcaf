@@ -34,6 +34,7 @@ export type Info = {
   syncing: boolean; // indexer still catching up to the chain head
   lagSec: number; // seconds behind the chain head
   dryRun: boolean; // rounds are computed but nothing is sent
+  test: boolean; // no token configured yet: tracking a stand-in token as a dry run
   updatedAt: number;
 
   windowNo: number;

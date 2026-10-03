@@ -2,7 +2,7 @@
 // all state, and an alarm loop indexes the chain, closes rounds and sends payouts.
 import { DurableObject } from "cloudflare:workers";
 import { CFG, initConfig, type EnvLike } from "./config.ts";
-import { makeDb, type Db, type Driver, type Row } from "./db.ts";
+import { bindToken, makeDb, type Db, type Driver, type Row } from "./db.ts";
 import { Engine } from "./engine.ts";
 import { indexPass, type Seen, type Sink } from "./indexer.ts";
 import { loadToken, refreshMarket } from "./market.ts";
@@ -48,6 +48,7 @@ export class EngineDO extends DurableObject<Env> {
         tx: (fn) => this.ctx.storage.transactionSync(fn),
       };
       this.db = makeDb(driver);
+      bindToken(this.db, CFG.token);
       this.engine = new Engine(this.db);
       this.reader = new Reader(this.db, this.engine);
       this.sink = {

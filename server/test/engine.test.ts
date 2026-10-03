@@ -146,3 +146,16 @@ test("snapshot shape", () => {
   assert.equal(s.info.rules.topN, 2);
   assert.equal(s.info.rules.minHolders, 3);
 });
+
+test("switching the token wipes the old token's state", async () => {
+  const { bindToken } = await import("../src/db.ts");
+  const r = rig();
+  bindToken(r.db, "test.near");
+  r.block([{ kind: "buy", w: "alice.near", near: 2 }]);
+  bindToken(r.db, "test.near");
+  assert.equal(r.reader.wallet("alice.near").known, true, "same token keeps state");
+  bindToken(r.db, "real.near");
+  assert.equal(r.reader.wallet("alice.near").known, false);
+  assert.equal(r.db.meta.get("done"), undefined);
+  assert.equal(r.db.meta.get("token"), "real.near");
+});

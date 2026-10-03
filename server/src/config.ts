@@ -8,6 +8,9 @@ import type { Rules } from "../../shared/types.ts";
  */
 export type EnvLike = Record<string, string | undefined>;
 
+/** Stand-ins used until the real token is configured: an active token, a vault that never pays. */
+const TEST = { token: "token.v2.ref-finance.near", symbol: "REF", vault: "dcaf-test-vault.near", pool: 79 };
+
 const list = (v: string | undefined) => (v ?? "").split(",").map((s) => s.trim()).filter(Boolean);
 const num = (v: string | undefined, d: number) => (v !== undefined && v !== "" && Number.isFinite(+v) ? +v : d);
 
@@ -36,8 +39,10 @@ function build(e: EnvLike) {
   if (rules.roundMax < rules.roundMin) throw new Error("ROUND_MAX must be ≥ ROUND_MIN");
   if (rules.vaultBps > rules.feeBps) throw new Error("VAULT_BPS can't be more than FEE_BPS");
 
-  const token = need("TOKEN_CONTRACT");
-  const vaultAccount = need("VAULT_ACCOUNT");
+  // test mode: until TOKEN_CONTRACT is set on mainnet, track REF on its Rhea REF/wNEAR pool as a dry run
+  const test = main && !e.TOKEN_CONTRACT;
+  const token = test ? TEST.token : need("TOKEN_CONTRACT");
+  const vaultAccount = e.VAULT_ACCOUNT || (test ? TEST.vault : need("VAULT_ACCOUNT"));
   const dexes = list(e.DEX_ACCOUNTS || (main ? "v2.ref-finance.near" : "ref-finance-101.testnet"));
   const vaultKey = e.VAULT_PRIVATE_KEY || "";
 
@@ -53,16 +58,17 @@ function build(e: EnvLike) {
     txApi: e.TX_API_URL || (main ? "https://tx.main.fastnear.com" : "https://tx.test.fastnear.com"),
     apiKey: e.FASTNEAR_API_KEY || "",
     token,
-    symbol: e.TOKEN_SYMBOL || "DCAF",
+    symbol: e.TOKEN_SYMBOL || (test ? TEST.symbol : "DCAF"),
     wrap: e.WRAP_CONTRACT || (main ? "wrap.near" : "wrap.testnet"),
     dexes: new Set(dexes),
     ref: e.REF_CONTRACT || dexes[0],
-    refPoolId: e.REF_POOL_ID ? Number(e.REF_POOL_ID) : null,
+    refPoolId: e.REF_POOL_ID ? Number(e.REF_POOL_ID) : test ? TEST.pool : null,
     // never DCAers: the token itself, DEXes, the vault, plus anything listed
     excluded: new Set([token, vaultAccount, ...dexes, ...list(e.EXCLUDE_ACCOUNTS)]),
     vaultAccount,
     vaultKey,
-    dryRun: e.DRY_RUN === "true" || !vaultKey,
+    test,
+    dryRun: test || e.DRY_RUN === "true" || !vaultKey,
     reserve: num(e.VAULT_RESERVE_NEAR, 0.5),
     startBlock: e.START_BLOCK ? Number(e.START_BLOCK) : null,
     liveLagSec: num(e.LIVE_LAG_SEC, 30),

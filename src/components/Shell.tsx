@@ -339,6 +339,7 @@ function Status() {
     msg = snap.info.holders < snap.info.rules.minHolders
       ? `Waiting for holders · ${snap.info.holders}/${snap.info.rules.minHolders} · the timer starts at ${snap.info.rules.minHolders}`
       : "Warming up · first window opens soon";
+  else if (snap.info.test) msg = `Test mode · tracking ${snap.info.symbol} until the real token is set`;
   else if (snap.info.dryRun) msg = "Dry run · payouts are recorded, not sent";
   if (!msg) return null;
   return <div className="wrap"><p className={`status status-${tone}`}><span className="dot" />{msg}</p></div>;
