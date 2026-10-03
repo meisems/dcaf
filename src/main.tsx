@@ -5,6 +5,7 @@ import { RouterProvider } from "react-router/dom";
 import { Shell } from "./components/Shell";
 import { AppLink, Empty } from "./components/ui";
 import { live } from "./lib/api";
+import { usePageName } from "./lib/hooks";
 import { Pages, prefetchAllWhenIdle } from "./lib/prefetch";
 import { ToastProvider } from "./lib/toast";
 import Home from "./pages/Home";
@@ -27,10 +28,15 @@ const router = createBrowserRouter([
       { path: "/wallet/:id", element: page(<WalletPage />) },
       { path: "/docs", element: page(<Docs />) },
       { path: "/docs/:slug", element: page(<Docs />) },
-      { path: "*", element: <Empty title="Nothing brewing here"><AppLink to="/" className="btn btn-soft">Home</AppLink></Empty> },
+      { path: "*", element: <NotFound /> },
     ],
   },
 ]);
+
+function NotFound() {
+  usePageName("Not found");
+  return <Empty title="Nothing brewing here"><AppLink to="/" className="btn btn-soft">Home</AppLink></Empty>;
+}
 
 live.start();
 prefetchAllWhenIdle();

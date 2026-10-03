@@ -6,6 +6,7 @@ import { acct, near, pct } from "../lib/format";
 import { Search } from "../components/Icons";
 import { useFlip } from "../lib/flip";
 import { useMe } from "../lib/me";
+import { usePageName } from "../lib/hooks";
 
 const TABS = [
   { k: "next", label: "Next round" },
@@ -15,6 +16,7 @@ const TABS = [
 type K = (typeof TABS)[number]["k"];
 
 export default function Board() {
+  usePageName("Leaderboard");
   const { snap } = useLive();
   const account = useMe();
   const [tab, setTab] = useState<K>("next");

@@ -7,7 +7,7 @@ import { notify, useReminders } from "../lib/remind";
 import { prefetchPath } from "../lib/prefetch";
 import { acct, isAccountId, mmss, near } from "../lib/format";
 import { setMe, useMe } from "../lib/me";
-import { toggleTheme, useNow, useTheme } from "../lib/hooks";
+import { toggleTheme, useCurrentPageName, useNow, useTheme } from "../lib/hooks";
 import { useToast } from "../lib/toast";
 import { Bean, Book, Coins, Copy, Cross, Home, Pulse, Search, Trophy } from "./Icons";
 import { Clock, useWindowAnim } from "./Clock";
@@ -428,10 +428,12 @@ function useStreakReminder(mine: WalletReport | null) {
 function useTabTitle() {
   const { snap } = useLive();
   const now = useNow();
+  const page = useCurrentPageName();
   useEffect(() => {
     const i = snap?.info;
-    if (!i?.started || !i.nextRoundAt) return void (document.title = `${BRAND.name} · ${BRAND.tagline}`);
+    const named = page ? `${page} · ${BRAND.name}` : BRAND.name;
+    if (!i?.started || !i.nextRoundAt) return void (document.title = page ? named : `${BRAND.name} · ${BRAND.tagline}`);
     const left = i.nextRoundAt - now;
-    document.title = left > 0 ? `${mmss(left)} · ${BRAND.name}` : `closing · ${BRAND.name}`;
-  }, [snap, now]);
+    document.title = `${left > 0 ? mmss(left) : "closing"} · ${named}`;
+  }, [snap, now, page]);
 }
