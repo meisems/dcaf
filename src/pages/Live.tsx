@@ -5,10 +5,12 @@ import { Ago, AppLink, Avatar, Card, Empty, PageHead, StatusPill, Streak } from 
 import { useLive, type Status } from "../lib/api";
 import { acct, near } from "../lib/format";
 import { Countdown, useWindowAnim } from "../components/Clock";
+import { usePageName } from "../lib/hooks";
 
 type Trader = { id: string; buys: number; sells: number; bought: number; sold: number; last: number; status: Status | null; streak: number };
 
 export default function Live() {
+  usePageName("Live");
   const { snap } = useLive();
   const [tab, setTab] = useState<"dca" | "all">("dca");
   const [side, setSide] = useState<"all" | "buy" | "sell">("all");

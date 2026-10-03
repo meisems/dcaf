@@ -4,8 +4,10 @@ import { LINKS } from "../config";
 import { Ago, AppLink, Avatar, Card, Empty, PageHead, Streak } from "../components/ui";
 import { getRound, peekRound, useLive, type Round } from "../lib/api";
 import { acct, clock, dateTime, near, usd } from "../lib/format";
+import { usePageName } from "../lib/hooks";
 
 export default function Rounds() {
+  usePageName("Rounds");
   const { snap } = useLive();
   if (!snap) return <div className="card skeleton" style={{ height: 420 }} />;
   const rounds = snap.rounds;
@@ -52,6 +54,7 @@ export default function Rounds() {
 
 export function RoundPage() {
   const { no } = useParams();
+  usePageName(`Round #${no}`);
   const [r, setR] = useState<Round | null | undefined>(() => peekRound(Number(no)) ?? undefined);
   useEffect(() => {
     setR(peekRound(Number(no)) ?? undefined);

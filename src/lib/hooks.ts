@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { nowS } from "./format";
 
 // ---------------------------------------------------------------- one clock for the whole app
@@ -70,3 +70,24 @@ export function useTheme(): [Theme, typeof toggleTheme] {
   const theme = useSyncExternalStore((f) => (themeSubs.add(f), () => void themeSubs.delete(f)), readTheme);
   return [theme, toggleTheme];
 }
+
+// ---------------------------------------------------------------- page name for the browser tab
+const nameSubs = new Set<() => void>();
+let pageName = "";
+const setPageName = (n: string) => {
+  if (n === pageName) return;
+  pageName = n;
+  nameSubs.forEach((f) => f());
+};
+
+/** Names the current page in the browser tab (the shell adds the countdown and brand). */
+export function usePageName(name: string) {
+  useEffect(() => {
+    setPageName(name);
+    return () => {
+      if (pageName === name) setPageName("");
+    };
+  }, [name]);
+}
+
+export const useCurrentPageName = () => useSyncExternalStore((f) => (nameSubs.add(f), () => void nameSubs.delete(f)), () => pageName);

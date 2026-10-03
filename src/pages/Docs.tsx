@@ -2,6 +2,7 @@ import { marked } from "marked";
 import { useEffect, useMemo, useRef } from "react";
 import { NavLink, useNavigate, useParams } from "react-router";
 import { AppLink, Card, Empty } from "../components/ui";
+import { usePageName } from "../lib/hooks";
 
 // docs/*.md is the single source: readable on GitHub, rendered here.
 const files = import.meta.glob("../../docs/*.md", { query: "?raw", import: "default", eager: true }) as Record<string, string>;
@@ -20,6 +21,7 @@ export default function Docs() {
   const box = useRef<HTMLDivElement>(null);
   const i = DOCS.findIndex((d) => d.slug === slug);
   const doc = DOCS[i];
+  usePageName(doc ? `${doc.title} · Docs` : "Docs");
   const html = useMemo(() => (doc ? (marked.parse(doc.md.replace(/\nNext: .*$/m, ""), { async: false }) as string) : ""), [doc]);
 
   // keep in-app links inside the router

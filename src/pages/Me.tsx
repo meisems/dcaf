@@ -10,9 +10,11 @@ import { acct, isAccountId, near } from "../lib/format";
 import { setMe, useMe } from "../lib/me";
 import { disableReminders, enableReminders, useReminders } from "../lib/remind";
 import { useToast } from "../lib/toast";
+import { usePageName } from "../lib/hooks";
 
 /** No wallet to connect: type your account once, it's remembered on this device. */
 export default function Me() {
+  usePageName("My wallet");
   const me = useMe();
   if (me) return <WalletView id={me} mine />;
   return <Track />;
@@ -49,6 +51,7 @@ function Track() {
 
 export function WalletPage() {
   const { id = "" } = useParams();
+  usePageName(acct(id.toLowerCase(), 24));
   const me = useMe();
   const v = id.toLowerCase();
   if (!isAccountId(v)) return <Card><Empty title="Not a NEAR account" hint={id} /></Card>;
