@@ -2,6 +2,7 @@
 import { existsSync } from "node:fs";
 import { startApi } from "./api.ts";
 import { CFG, initConfig } from "./config.ts";
+import { bindToken } from "./db.ts";
 import { openNodeDb } from "./db-node.ts";
 import { Engine } from "./engine.ts";
 import { run } from "./indexer.ts";
@@ -14,6 +15,7 @@ if (existsSync(".env")) process.loadEnvFile(".env");
 initConfig(process.env);
 
 const db = openNodeDb(CFG.db);
+bindToken(db, CFG.token);
 const engine = new Engine(db);
 const reader = new Reader(db, engine);
 let stopping = false;

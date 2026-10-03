@@ -84,3 +84,18 @@ export function makeDb(driver: Driver) {
 }
 
 export type Db = ReturnType<typeof makeDb>;
+
+/**
+ * Ties the stored state to one token. When TOKEN_CONTRACT changes (e.g. from the test token to the
+ * real one) everything indexed for the old token is wiped, so the new one starts clean.
+ * Call before building the Engine, which reads its cursors from meta.
+ */
+export function bindToken(db: Db, token: string) {
+  const was = db.meta.get("token");
+  if (was === token) return;
+  if (was !== undefined || db.meta.get("done") !== undefined) {
+    for (const t of ["trades", "wallets", "windows", "window_buys", "payouts", "meta"]) db.prepare(`DELETE FROM ${t}`).run();
+    console.log(`◆ token changed ${was ?? "(unknown)"} → ${token}: state reset`);
+  }
+  db.meta.set("token", token);
+}
