@@ -11,6 +11,7 @@ export const DEFAULT_RULES: Rules = {
   maxShare: 1,
   minPayout: 0.001,
   graceWindows: 0,
+  minHolders: 15,
   feeBps: 300,
   vaultBps: 100,
 };

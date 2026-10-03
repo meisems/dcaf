@@ -12,6 +12,7 @@ Object.assign(process.env, {
   TOP_N: "2",
   MIN_BUY: "0.1",
   MIN_TOTAL: "1",
+  MIN_HOLDERS: "3",
 });
 
 const { initConfig } = await import("../src/config.ts");
@@ -58,6 +59,27 @@ function rig() {
     void real;
   }, now: () => t, DEX };
 }
+
+test("the timer waits for enough holders", () => {
+  const r = rig();
+  r.block([{ kind: "buy", w: "alice.near", near: 2 }, { kind: "buy", w: "bob.near", near: 2 }]);
+  r.start();
+  assert.equal(r.engine.holders(), 2);
+  assert.equal(r.engine.started, false, "2 holders: no window yet");
+  assert.equal(r.engine.current(), null);
+  assert.equal(r.reader.snapshot().info.holders, 2);
+
+  // a wallet that sold everything is not a holder
+  r.block([{ kind: "buy", w: "carl.near", near: 1 }, { kind: "sell", w: "carl.near", near: 1, tokens: 100 }]);
+  r.tick(1);
+  assert.equal(r.engine.holders(), 2);
+  assert.equal(r.engine.started, false);
+
+  r.block([{ kind: "buy", w: "dan.near", near: 1 }]);
+  r.tick(1);
+  assert.equal(r.engine.started, true, "3rd holder starts the timer");
+  assert.equal(r.engine.current()?.no, 1);
+});
 
 test("streaks, top-N split, dropouts and golden rounds", () => {
   const r = rig();
@@ -111,6 +133,7 @@ test("streaks, top-N split, dropouts and golden rounds", () => {
 
 test("snapshot shape", () => {
   const r = rig();
+  r.block([{ kind: "recv", w: "a.near", tokens: 1 }, { kind: "recv", w: "b.near", tokens: 1 }, { kind: "recv", w: "c.near", tokens: 1 }]);
   r.start();
   r.block([{ kind: "buy", w: "alice.near", near: 1.5 }]);
   const s = r.reader.snapshot();
@@ -119,5 +142,7 @@ test("snapshot shape", () => {
   assert.equal(s.board.next[0].liveStreak, 1);
   assert.ok(s.board.next[0].est > 0);
   assert.equal(s.trades.length, 1);
+  assert.equal(s.info.holders, 4);
   assert.equal(s.info.rules.topN, 2);
+  assert.equal(s.info.rules.minHolders, 3);
 });

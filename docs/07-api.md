@@ -40,7 +40,7 @@ Closed rounds (`?limit=` up to 500), or one round with all its payouts.
 ## `/api/health`
 
 ```json
-{ "ok": true, "height": 218231964, "lagSec": 4, "started": true, "dryRun": false }
+{ "ok": true, "height": 218231964, "lagSec": 4, "started": true, "holders": 42, "dryRun": false }
 ```
 
 Next: [FAQ](/docs/faq)

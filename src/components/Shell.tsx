@@ -335,7 +335,10 @@ function Status() {
   let tone = "info";
   if (!online || !snap) (msg = "Engine offline · retrying"), (tone = "bad");
   else if (snap.info.syncing) msg = snap.info.lagSec ? `Catching up · ${lag(snap.info.lagSec)} behind` : "Catching up with the chain";
-  else if (!snap.info.started) msg = "Warming up · first window opens soon";
+  else if (!snap.info.started)
+    msg = snap.info.holders < snap.info.rules.minHolders
+      ? `Waiting for holders · ${snap.info.holders}/${snap.info.rules.minHolders} · the timer starts at ${snap.info.rules.minHolders}`
+      : "Warming up · first window opens soon";
   else if (snap.info.dryRun) msg = "Dry run · payouts are recorded, not sent";
   if (!msg) return null;
   return <div className="wrap"><p className={`status status-${tone}`}><span className="dot" />{msg}</p></div>;

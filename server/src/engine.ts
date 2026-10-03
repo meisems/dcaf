@@ -61,11 +61,17 @@ export class Engine {
       payout: d.prepare("INSERT INTO payouts (no, w, amount, yocto, streak, buy, status) VALUES (?, ?, ?, ?, ?, ?, ?)"),
       earn: d.prepare("UPDATE wallets SET earned = earned + ? WHERE id = ?"),
       unsent: d.prepare("SELECT COALESCE(SUM(amount), 0) AS s FROM payouts WHERE status = 'pending'"),
+      holders: d.prepare("SELECT COUNT(*) AS n FROM wallets WHERE tokens > 0"),
     };
   }
 
   get started() {
     return this.db.meta.num("started") === 1;
+  }
+
+  /** Wallets that hold the token right now (the token, DEXes and the vault are never wallets). */
+  holders(): number {
+    return (this.q.holders.get() as { n: number }).n;
   }
 
   current(): Win | null {
@@ -108,12 +114,15 @@ export class Engine {
 
   private advanceTo(t: number) {
     if (!this.started) {
-      // rounds begin once the indexer is live, so history never pays out retroactively
+      // rounds begin once the indexer is live, so history never pays out retroactively,
+      // and only once enough wallets hold the token for a round to mean something
       if (Date.now() / 1000 - t > CFG.liveLagSec) return;
+      const holders = this.holders();
+      if (holders < CFG.rules.minHolders) return;
       this.db.meta.set("started", 1);
       this.db.meta.set("startedAt", t);
       this.open(t);
-      console.log(`▶ live at block ${this.lastHeight}: window #1 open`);
+      console.log(`▶ live at block ${this.lastHeight} with ${holders} holders: window #1 open`);
       return;
     }
     for (let w = this.current(); w && t >= w.close_at; w = this.current()) {

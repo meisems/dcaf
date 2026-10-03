@@ -24,7 +24,7 @@ export function route(reader: Reader, engine: Engine, path: string, params: URLS
       status: 200,
       cache: CC.none,
       body: {
-        ok: true, height: engine.lastHeight, lagSec: Math.max(0, Math.floor(Date.now() / 1000) - engine.lastBlockT), started: engine.started, dryRun: CFG.dryRun,
+        ok: true, height: engine.lastHeight, lagSec: Math.max(0, Math.floor(Date.now() / 1000) - engine.lastBlockT), started: engine.started, holders: engine.holders(), dryRun: CFG.dryRun,
         rpc: { reads: reads().stats(), transactions: txs().stats() },
       },
     };
