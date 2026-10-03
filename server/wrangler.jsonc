@@ -3,7 +3,7 @@
 // Variables and secrets live in the dashboard (Settings → Variables and Secrets); keep_vars keeps them on redeploy.
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "dcaf-engine",
+  "name": "dcaf",
   "main": "src/worker.ts",
   "compatibility_date": "2026-06-01",
   "compatibility_flags": ["nodejs_compat"],

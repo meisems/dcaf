@@ -4,8 +4,8 @@ Two Cloudflare projects, both built straight from this GitHub repo. No CLI neede
 
 | Project | Type | What it runs |
 |---|---|---|
-| `dcaf-engine` | Worker + Durable Object | indexer, rounds, payouts, API |
-| `dcaf` | Pages | the website (+ a small function that forwards `/api/*` to the engine) |
+| `dcaf` | Worker + Durable Object | indexer, rounds, payouts, API |
+| `dcaf-7qd` (any name) | Pages | the website (+ a small function that forwards `/api/*` to the engine) |
 
 > **Plan:** the engine runs an alarm every ~2 s. Use **Workers Paid** ($5/mo); the free plan's 10 ms CPU limit is too tight once trading picks up.
 
@@ -15,12 +15,12 @@ Two Cloudflare projects, both built straight from this GitHub repo. No CLI neede
 
 1. **Workers & Pages → Create → Workers → Import a repository**, choose `meisems/dcaf`.
 2. Settings:
-   - Project name: `dcaf-engine`
+   - Project name: `dcaf` (must match `name` in `server/wrangler.jsonc`)
    - **Root directory:** `server`
    - Build command: *(leave empty)*
    - Deploy command: `npx wrangler deploy`
 3. **Deploy.** The Durable Object, its SQLite storage and the 1-minute cron are created from `server/wrangler.jsonc`.
-4. **dcaf-engine → Settings → Variables and Secrets → Add**:
+4. **dcaf (Worker) → Settings → Variables and Secrets → Add**:
 
 | Name | Type | Example |
 |---|---|---|
@@ -42,7 +42,7 @@ Two Cloudflare projects, both built straight from this GitHub repo. No CLI neede
 | `FASTNEAR_API_KEY` | Secret | optional, higher rate limits (sent to FastNEAR hosts only) |
 
    Saving deploys a new version. `keep_vars` in `wrangler.jsonc` keeps these on every future Git deploy.
-5. Check `https://dcaf-engine.<your-subdomain>.workers.dev/api/health`. `started: true` means it is live; until the token has `MIN_HOLDERS` holders the engine indexes but no window opens.
+5. Check `https://dcaf.<your-subdomain>.workers.dev/api/health`. `started: true` means it is live; until the token has `MIN_HOLDERS` holders the engine indexes but no window opens.
 
 The fee split is never published: `/api/snapshot` omits `FEE_BPS` and `VAULT_BPS`.
 
@@ -74,9 +74,9 @@ The fee split is never published: `/api/snapshot` omits `FEE_BPS` and `VAULT_BPS
 | `VITE_BUY_URL` | optional, default Rhea swap for the token |
 
 4. **Save and Deploy.**
-5. **dcaf → Settings → Bindings → Add → Service binding:** variable `ENGINE`, service `dcaf-engine`. Save, then **Deployments → … → Retry deployment** so the binding applies.
+5. Optional: **Pages project → Settings → Bindings → Add → Service binding:** variable `ENGINE`, service `dcaf`. Save, then **Deployments → … → Retry deployment** so the binding applies.
 
-   Without a binding you can instead add a variable `ENGINE_URL` = the Worker's `workers.dev` URL.
+   Without a binding the site forwards `/api/*` to `ENGINE_URL`, or to `https://dcaf.laidev.workers.dev` (`DEFAULT_ENGINE_URL` in `functions/api/[[path]].ts`).
 
 Open the Pages URL. `/api/health` on the site should answer from the engine.
 
