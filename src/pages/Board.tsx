@@ -1,8 +1,9 @@
 import { Fragment, useState } from "react";
-import { Link } from "react-router";
-import { Avatar, Empty, PageHead, StatusPill, Streak } from "../components/ui";
+
+import { AppLink, Avatar, Empty, PageHead, StatusPill, Streak } from "../components/ui";
 import { useLive, type BoardRow } from "../lib/api";
 import { acct, near, pct } from "../lib/format";
+import { useFlip } from "../lib/flip";
 import { useMe } from "../lib/me";
 
 const TABS = [
@@ -17,6 +18,7 @@ export default function Board() {
   const account = useMe();
   const [tab, setTab] = useState<K>("next");
   const [all, setAll] = useState(false);
+  const body = useFlip<HTMLTableSectionElement>(`${tab}:${snap?.board[tab].map((r) => r.id).join()}`);
   if (!snap) return <div className="card skeleton" style={{ height: 480 }} />;
   const topN = snap.info.rules.topN;
   const rows = snap.board[tab];
@@ -35,15 +37,15 @@ export default function Board() {
       </PageHead>
 
       {tab === "next" && rows.length > 0 && (
-        <div className="podium">
+        <div className="podium" data-reveal>
           {rows.slice(0, 3).map((r, k) => (
-            <Link to={`/wallet/${r.id}`} key={r.id} className={`pod p${k + 1}`}>
+            <AppLink to={`/wallet/${r.id}`} key={r.id} className={`pod p${k + 1}`}>
               <span className={`medal m${k + 1}`}>{k + 1}</span>
               <Avatar id={r.id} size={40} />
               <span className="mono">{acct(r.id, 16)}</span>
               <b>{near(r.est)}</b>
               <Streak n={r.liveStreak} />
-            </Link>
+            </AppLink>
           ))}
         </div>
       )}
@@ -63,15 +65,15 @@ export default function Board() {
                   <th className="r">{tab === "allTime" ? "Earned" : "Est."}</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody ref={body}>
                 {shown.map((r, k) => (
                   <Fragment key={r.id}>
                     {tab === "next" && k === topN && (
                       <tr className="cutoff"><td colSpan={6}><span>Top {topN} get paid · below here earns nothing this round</span></td></tr>
                     )}
-                    <tr className={`${r.id === account ? "me" : ""} ${tab === "next" && k >= topN ? "dim" : ""}`}>
+                    <tr data-flip={r.id} className={`${r.id === account ? "me" : ""} ${tab === "next" && k >= topN ? "dim" : ""}`}>
                       <td className="rank">{k < 3 ? <span className={`medal m${k + 1}`}>{k + 1}</span> : k + 1}</td>
-                      <td><Link className="who" to={`/wallet/${r.id}`}><Avatar id={r.id} size={24} /><span className="mono">{acct(r.id, 22)}</span></Link></td>
+                      <td><AppLink className="who" to={`/wallet/${r.id}`}><Avatar id={r.id} size={24} /><span className="mono">{acct(r.id, 22)}</span></AppLink></td>
                       <td><Streak n={r.liveStreak} /></td>
                       <td className="hide-sm muted">{near(tab === "allTime" ? r.total : r.windowBuy)}</td>
                       <td className="bar-col hide-sm">

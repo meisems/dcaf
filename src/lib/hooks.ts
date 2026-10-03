@@ -13,7 +13,7 @@ export function useNow() {
 }
 
 export type Theme = "light" | "dark";
-type VTDoc = Document & { startViewTransition?: (cb: () => void) => { ready: Promise<void> } };
+type VTDoc = Document & { startViewTransition?: (cb: () => void) => { ready: Promise<void>; finished: Promise<void> } };
 
 /**
  * Theme with a circular reveal: the new theme grows out of the toggle
@@ -39,7 +39,10 @@ export function useTheme(): [Theme, (at?: { clientX: number; clientY: number }) 
     const x = at?.clientX || window.innerWidth - 80;
     const y = at?.clientY || 40;
     const r = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
+    const root = document.documentElement;
+    root.classList.add("vt-theme");
     const t = doc.startViewTransition(apply);
+    void t.finished.finally(() => root.classList.remove("vt-theme"));
     void t.ready.then(() =>
       document.documentElement.animate(
         { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${r}px at ${x}px ${y}px)`] },

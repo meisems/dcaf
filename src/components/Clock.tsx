@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 
 /** One digit as a rolling strip 0–9: changes slide instead of snapping. */
 function Digit({ d }: { d: number }) {
@@ -38,21 +38,17 @@ export function Clock({ left, size = "lg", idle = false }: { left: number; size?
   );
 }
 
-/** Fractional unix time on every animation frame (throttled), for rings that glide instead of tick. */
-export function useSmoothNow(fps = 30) {
-  const [t, setT] = useState(() => Date.now() / 1000);
-  useEffect(() => {
-    let raf = 0;
-    let last = 0;
-    const loop = (ts: number) => {
-      if (ts - last > 1000 / fps) {
-        last = ts;
-        setT(Date.now() / 1000);
-      }
-      raf = requestAnimationFrame(loop);
-    };
-    raf = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(raf);
-  }, [fps]);
-  return t;
+/**
+ * CSS variables that let a ring animate the whole window on the compositor:
+ * duration = window length, negative delay = time already elapsed. Fixed per window,
+ * so re-renders never restart or jitter the animation; `key` remounts it on a new window.
+ */
+export function useWindowAnim(windowStart: number, closeAt: number, open: boolean) {
+  const key = `${windowStart}:${closeAt}:${open}`;
+  const style = useMemo(() => {
+    const span = Math.max(1, closeAt - windowStart);
+    const elapsed = Math.min(span, Math.max(0, Date.now() / 1000 - windowStart));
+    return { ["--span" as string]: `${span}s`, ["--delay" as string]: `${-elapsed}s` };
+  }, [key]);
+  return { key, style };
 }

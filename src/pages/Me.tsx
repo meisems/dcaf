@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { Link, useParams } from "react-router";
+import { useParams } from "react-router";
 import { LINKS } from "../config";
 import { Bean, Check, Search } from "../components/Icons";
 import { Mark } from "../components/Logo";
 import { useReport, WalletCard } from "../components/WalletCard";
-import { Avatar, Card, Empty, PageHead } from "../components/ui";
+import { AppLink, Avatar, Card, Empty, PageHead } from "../components/ui";
 import { useLive } from "../lib/api";
 import { acct, ago, isAccountId, near } from "../lib/format";
 import { useNow } from "../lib/hooks";
@@ -88,7 +88,7 @@ function WalletView({ id, mine }: { id: string; mine: boolean }) {
       {!rep.known && mine && (
         <p className="center"><a className="btn btn-grad" href={LINKS.buy} target="_blank" rel="noreferrer"><Bean size={16} /> First buy</a></p>
       )}
-      {!mine && <p className="center"><Link to="/board" className="more-link">Leaderboard →</Link></p>}
+      {!mine && <p className="center"><AppLink to="/board" className="more-link">Leaderboard →</AppLink></p>}
     </>
   );
 }

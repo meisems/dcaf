@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router";
+
 import { PriceChart } from "../components/PriceChart";
-import { Avatar, Card, Empty, PageHead, StatusPill, Streak } from "../components/ui";
+import { AppLink, Avatar, Card, Empty, PageHead, StatusPill, Streak } from "../components/ui";
 import { useLive, type Status } from "../lib/api";
 import { acct, ago, near } from "../lib/format";
 import { Clock } from "../components/Clock";
@@ -67,7 +67,7 @@ export default function Live() {
                     {dcaers.map((r, k) => (
                       <tr key={r.id} className={k < i.rules.topN ? "paid" : "dim"}>
                         <td className="muted">{k + 1}</td>
-                        <td><Link to={`/wallet/${r.id}`} className="who"><Avatar id={r.id} size={22} /><span className="mono">{acct(r.id, 20)}</span></Link></td>
+                        <td><AppLink to={`/wallet/${r.id}`} className="who"><Avatar id={r.id} size={22} /><span className="mono">{acct(r.id, 20)}</span></AppLink></td>
                         <td><Streak n={r.liveStreak} /></td>
                         <td className="r">{near(r.windowBuy)}</td>
                         <td className="r"><b>{near(r.est)}</b></td>
@@ -86,7 +86,7 @@ export default function Live() {
                 <tbody>
                   {traders.slice(0, 100).map((t) => (
                     <tr key={t.id}>
-                      <td><Link to={`/wallet/${t.id}`} className="who"><Avatar id={t.id} size={22} /><span className="mono">{acct(t.id, 20)}</span></Link></td>
+                      <td><AppLink to={`/wallet/${t.id}`} className="who"><Avatar id={t.id} size={22} /><span className="mono">{acct(t.id, 20)}</span></AppLink></td>
                       <td>{t.status ? <StatusPill s={t.status} /> : <span className="muted">–</span>}{t.streak > 0 && <> <Streak n={t.streak} size={12} /></>}</td>
                       <td className="r">{near(t.bought)} <small className="muted">×{t.buys}</small></td>
                       <td className="r hide-sm">{t.sells ? near(t.sold) : <span className="muted">–</span>}</td>
@@ -107,7 +107,7 @@ export default function Live() {
               {snap.trades.slice(-40).reverse().map((t) => (
                 <li key={t.tx + t.w} className={t.side}>
                   <span className={`side ${t.side}`}>{t.side === "buy" ? "Buy" : "Sell"}</span>
-                  <Link to={`/wallet/${t.w}`} className="mono">{acct(t.w, 16)}</Link>
+                  <AppLink to={`/wallet/${t.w}`} className="mono">{acct(t.w, 16)}</AppLink>
                   <b>{near(t.q)}</b>
                   <small className="muted">{ago(t.t, now)}</small>
                 </li>

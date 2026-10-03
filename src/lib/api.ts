@@ -98,6 +98,15 @@ export async function getWallet(id: string): Promise<WalletReport> {
   return rep;
 }
 
+const inflight = new Map<string, Promise<WalletReport>>();
+/** Warm a wallet report (on hover) so its page opens with data already there. */
+export function prefetchWallet(id: string) {
+  const hit = wallets.get(id);
+  if ((hit && Date.now() - hit.at < 5000) || inflight.has(id)) return;
+  const p = getWallet(id).catch(() => null as unknown as WalletReport).finally(() => inflight.delete(id));
+  inflight.set(id, p);
+}
+
 export const peekRound = (no: number) => rounds.get(no) ?? null;
 
 export async function getRound(no: number): Promise<Round | null> {

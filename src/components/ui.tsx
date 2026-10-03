@@ -1,5 +1,7 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
-import { Link } from "react-router";
+import { Link, type LinkProps } from "react-router";
+import { prefetchWallet } from "../lib/api";
+import { prefetchPath } from "../lib/prefetch";
 import type { Status } from "../lib/api";
 import { Flame } from "./Icons";
 
@@ -8,6 +10,26 @@ import { Flame } from "./Icons";
 type Ui = { openSearch: () => void };
 export const UiCtx = createContext<Ui>({ openSearch: () => {} });
 export const useUi = () => useContext(UiCtx);
+
+// ---------------------------------------------------------------- links that are already there
+
+/** Internal link: animated page transition, and the target warmed up on hover/touch/focus. */
+export function AppLink({ to, onMouseEnter, onFocus, onTouchStart, ...rest }: LinkProps & { to: string }) {
+  const warm = () => {
+    prefetchPath(to);
+    if (to.startsWith("/wallet/")) prefetchWallet(decodeURIComponent(to.slice(8)));
+  };
+  return (
+    <Link
+      to={to}
+      viewTransition
+      onMouseEnter={(e) => (warm(), onMouseEnter?.(e))}
+      onFocus={(e) => (warm(), onFocus?.(e))}
+      onTouchStart={(e) => (warm(), onTouchStart?.(e))}
+      {...rest}
+    />
+  );
+}
 
 // ---------------------------------------------------------------- numbers that glide
 
@@ -74,7 +96,7 @@ export function Card({ title, action, children, className = "" }: { title?: Reac
 }
 
 export const More = ({ to, children }: { to: string; children: ReactNode }) => (
-  <Link to={to} className="more-link">{children} <span aria-hidden>→</span></Link>
+  <AppLink to={to} className="more-link">{children} <span aria-hidden>→</span></AppLink>
 );
 
 /** Friendly empty state: a bean outline with an orbiting node. */

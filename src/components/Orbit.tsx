@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import type { Snapshot } from "../lib/api";
 import { acct, near } from "../lib/format";
-import { Clock, useSmoothNow } from "./Clock";
+import { useNow } from "../lib/hooks";
+import { Clock, useWindowAnim } from "./Clock";
 import { Mark } from "./Logo";
-import { Avatar } from "./ui";
+import { Avatar, Num } from "./ui";
 
 const TICKS = 60;
 type Ping = { key: string; who: string; q: number };
@@ -13,13 +14,11 @@ type Ping = { key: string; who: string; q: number };
  * this window's DCAers circle the bean, and every buy sends a ripple.
  */
 export function Orbit({ snap }: { snap: Snapshot }) {
-  const now = useSmoothNow(30); // fractional seconds: the ring glides
+  const now = useNow();
   const { info } = snap;
   const open = info.started && info.nextRoundAt > 0;
-  const span = Math.max(1, info.nextRoundAt - info.windowStart);
-  const left = Math.max(0, Math.ceil(info.nextRoundAt - now));
-  const prog = open ? Math.min(1, Math.max(0, (now - info.windowStart) / span)) : 0;
-  const lit = Math.round(prog * TICKS);
+  const left = Math.max(0, info.nextRoundAt - now);
+  const anim = useWindowAnim(info.windowStart, info.nextRoundAt, open);
   const urgent = open && left <= 60;
   const crew = snap.board.next.slice(0, 12);
   const topN = info.rules.topN;
@@ -39,9 +38,6 @@ export function Orbit({ snap }: { snap: Snapshot }) {
     return () => clearTimeout(tm);
   }, [snap.trades]);
 
-  // arc of the elapsed window, starting at 12 o'clock
-  const R = 150;
-  const C = 2 * Math.PI * R;
 
   return (
     <div className={`orbit-card${urgent ? " urgent" : ""}`}>
@@ -53,7 +49,7 @@ export function Orbit({ snap }: { snap: Snapshot }) {
       </div>
 
       <div className="orbit-stage"><div className="orbit-box">
-        <svg viewBox="0 0 340 340" className="orbit-svg" aria-hidden>
+        <svg viewBox="0 0 340 340" className={`orbit-svg${open ? "" : " idle"}`} style={anim.style} aria-hidden>
           <defs>
             <linearGradient id="arc" x1="0" y1="0" x2="1" y2="1">
               <stop offset="0" stopColor="#00EC97" />
@@ -64,21 +60,27 @@ export function Orbit({ snap }: { snap: Snapshot }) {
               <stop offset="0" stopColor="#00EC97" stopOpacity=".22" />
               <stop offset="1" stopColor="#00EC97" stopOpacity="0" />
             </radialGradient>
+            {/* used inside the rotated tick group, so it is already in that group's frame */}
+            <mask id="lit-mask" maskUnits="userSpaceOnUse">
+              <circle key={anim.key} cx="170" cy="170" r="164" pathLength={1} className="run-arc lit-mask" />
+            </mask>
           </defs>
           <circle cx="170" cy="170" r="128" fill="url(#core)" />
           <circle cx="170" cy="170" r="112" className="orbit-ring dashed" />
-          <circle cx="170" cy="170" r={R} className="orbit-ring" />
-          {Array.from({ length: TICKS }, (_, k) => {
-            const a = (k / TICKS) * 2 * Math.PI - Math.PI / 2;
-            const big = k % 5 === 0;
-            const r1 = 160, r2 = big ? 170 : 166;
-            return (
-              <line key={k} x1={170 + r1 * Math.cos(a)} y1={170 + r1 * Math.sin(a)} x2={170 + r2 * Math.cos(a)} y2={170 + r2 * Math.sin(a)}
-                className={`tick${k < lit ? " on" : ""}${big ? " big" : ""}`} />
-            );
-          })}
-          <circle cx="170" cy="170" r={R} className="orbit-arc" stroke="url(#arc)" strokeDasharray={`${C * prog} ${C}`} transform="rotate(-90 170 170)" />
-          {open && <circle className="orbit-head" r="5" cx={170 + R * Math.cos(prog * 2 * Math.PI - Math.PI / 2)} cy={170 + R * Math.sin(prog * 2 * Math.PI - Math.PI / 2)} />}
+          <circle cx="170" cy="170" r="150" className="orbit-ring" />
+          {/* 60 radial ticks = one thick dashed circle; the lit copy is revealed by the running mask */}
+          <g transform="rotate(-90 170 170)">
+            <circle cx="170" cy="170" r="164" pathLength={TICKS} className="ticks" />
+            <circle cx="170" cy="170" r="165" pathLength={TICKS / 5} className="ticks big" />
+            <g mask="url(#lit-mask)">
+              <circle cx="170" cy="170" r="164" pathLength={TICKS} className="ticks on" />
+              <circle cx="170" cy="170" r="165" pathLength={TICKS / 5} className="ticks big on" />
+            </g>
+          </g>
+          <g key={anim.key}>
+            <circle cx="170" cy="170" r="150" pathLength={1} className="orbit-arc run-arc" stroke="url(#arc)" transform="rotate(-90 170 170)" />
+            {open && <g className="run-head"><circle className="orbit-head" r="5" cx="170" cy="20" /></g>}
+          </g>
           {pings.map((p) => <circle key={p.key} className="orbit-ping" cx="170" cy="170" r="60" />)}
         </svg>
 
@@ -103,7 +105,7 @@ export function Orbit({ snap }: { snap: Snapshot }) {
       </div></div>
 
       <div className="orbit-stats">
-        <div><small>Vault</small><b>{near(info.pool)}</b></div>
+        <div><small>Vault</small><Num v={info.pool} fmt={(n) => near(n)} /></div>
         <div><small>DCAing</small><b>{info.dcaingNow}</b></div>
         <div><small>At risk</small><b>{info.atRisk}</b></div>
       </div>

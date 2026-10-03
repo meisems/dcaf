@@ -1,10 +1,11 @@
-import { Link } from "react-router";
+
 import { LINKS, SYMBOL } from "../config";
 import { ArrowRight, Bean, Coins, Flame, Lock, Users, Vault } from "../components/Icons";
 import { Orbit } from "../components/Orbit";
-import { Avatar, Card, Empty, More, Num, Streak } from "../components/ui";
+import { AppLink, Avatar, Card, Empty, More, Num, Streak } from "../components/ui";
 import { useLive, type Snapshot } from "../lib/api";
 import { acct, ago, near, usd } from "../lib/format";
+import { useFlip } from "../lib/flip";
 import { useNow } from "../lib/hooks";
 
 export default function Home() {
@@ -12,10 +13,13 @@ export default function Home() {
   const now = useNow();
   const i = snap?.info;
   const R = i?.rules;
+  const ranks = useFlip<HTMLOListElement>(snap?.board.next);
+  const feed = useFlip<HTMLUListElement>(snap?.trades.at(-1)?.tx);
 
   return (
     <>
       <section className="hero">
+        <div className="hero-glow" aria-hidden />
         <div className="hero-copy">
           <span className="chip chip-live"><span className="live-dot" /> Live on NEAR</span>
           <h1>
@@ -26,7 +30,7 @@ export default function Home() {
           <p className="lead">Buy every window. Top {R?.topN ?? 10} get paid, automatically.</p>
           <div className="cta">
             <a className="btn btn-grad btn-lg" href={LINKS.buy} target="_blank" rel="noreferrer">Buy ${SYMBOL} <ArrowRight size={18} /></a>
-            <Link className="btn btn-soft btn-lg" to="/me">My streak</Link>
+            <AppLink className="btn btn-soft btn-lg" to="/me">My streak</AppLink>
           </div>
           <span className="no-connect"><i />No wallet connect · tracked on-chain</span>
         </div>
@@ -35,27 +39,27 @@ export default function Home() {
 
       {snap && snap.trades.length > 0 && <Tape snap={snap} now={now} />}
 
-      <section className="kpis">
+      <section className="kpis" data-reveal>
         <Kpi icon={<Vault size={18} />} label="Vault" v={i?.pool ?? 0} fmt={(n) => near(n)} sub={i?.usdPerNear ? usd((i.pool ?? 0) * i.usdPerNear) : undefined} hot />
         <Kpi icon={<Users size={18} />} label="DCAing now" v={i?.dcaingNow ?? 0} fmt={(n) => Math.round(n).toString()} sub={i ? `${i.wallets} traders` : undefined} />
         <Kpi icon={<Flame size={18} />} label="Top streak" v={i?.topStreak ?? 0} fmt={(n) => Math.round(n).toString()} sub="windows" />
         <Kpi icon={<Coins size={18} />} label="Paid out" v={i?.totalPaid ?? 0} fmt={(n) => near(n)} sub={i ? `${i.roundsRun} rounds` : undefined} />
       </section>
 
-      <ol className="flow">
+      <ol className="flow" data-reveal>
         <Step n="01" icon={<Bean size={20} />} t={`≥ ${R?.minBuy ?? 0.1} NEAR`} s="each window" />
         <Step n="02" icon={<Lock size={20} />} t="Hold" s="never sell" />
         <Step n="03" icon={<Coins size={20} />} t={`Top ${R?.topN ?? 10}`} s="get paid" />
       </ol>
 
-      <section className="duo">
+      <section className="duo" data-reveal>
         <Card title="Next round" action={<More to="/board">Board</More>}>
           {snap && snap.board.next.length ? (
-            <ol className="rank-list">
+            <ol className="rank-list" ref={ranks}>
               {snap.board.next.slice(0, 5).map((r, k) => (
-                <li key={r.id}>
+                <li key={r.id} data-flip={r.id}>
                   <span className={`medal m${k + 1}`}>{k + 1}</span>
-                  <Link to={`/wallet/${r.id}`} className="who"><Avatar id={r.id} size={24} /><span className="mono">{acct(r.id, 18)}</span></Link>
+                  <AppLink to={`/wallet/${r.id}`} className="who"><Avatar id={r.id} size={24} /><span className="mono">{acct(r.id, 18)}</span></AppLink>
                   <Streak n={r.liveStreak} />
                   <b className="r">{near(r.est)}</b>
                 </li>
@@ -67,11 +71,11 @@ export default function Home() {
         </Card>
         <Card title="Live trades" action={<More to="/live">Live</More>}>
           {snap && snap.trades.length ? (
-            <ul className="feed">
+            <ul className="feed" ref={feed}>
               {snap.trades.slice(-6).reverse().map((t) => (
-                <li key={t.tx + t.w} className={t.side}>
+                <li key={t.tx + t.w} data-flip={t.tx + t.w} className={t.side}>
                   <span className={`side ${t.side}`}>{t.side === "buy" ? "Buy" : "Sell"}</span>
-                  <Link to={`/wallet/${t.w}`} className="mono">{acct(t.w, 18)}</Link>
+                  <AppLink to={`/wallet/${t.w}`} className="mono">{acct(t.w, 18)}</AppLink>
                   <b>{near(t.q)}</b>
                   <small className="muted">{ago(t.t, now)}</small>
                 </li>
@@ -90,12 +94,12 @@ export default function Home() {
 function Tape({ snap, now }: { snap: Snapshot; now: number }) {
   const items = snap.trades.slice(-18).reverse();
   const row = items.map((t) => (
-    <Link to={`/wallet/${t.w}`} key={t.tx + t.w} className={`tape-item ${t.side}`}>
+    <AppLink to={`/wallet/${t.w}`} key={t.tx + t.w} className={`tape-item ${t.side}`}>
       <Avatar id={t.w} size={18} />
       <span className="mono">{acct(t.w, 16)}</span>
       <b>{t.side === "buy" ? "+" : "−"}{near(t.q)}</b>
       <small>{ago(t.t, now)}</small>
-    </Link>
+    </AppLink>
   ));
   return (
     <div className="tape" aria-label="Latest trades">

@@ -1,21 +1,16 @@
-import { lazy, StrictMode, Suspense } from "react";
+import { StrictMode, Suspense } from "react";
 import { createRoot } from "react-dom/client";
-import { createBrowserRouter, Link } from "react-router";
+import { createBrowserRouter } from "react-router";
 import { RouterProvider } from "react-router/dom";
 import { Shell } from "./components/Shell";
-import { Empty } from "./components/ui";
+import { AppLink, Empty } from "./components/ui";
 import { live } from "./lib/api";
+import { Pages, prefetchAllWhenIdle } from "./lib/prefetch";
 import { ToastProvider } from "./lib/toast";
 import Home from "./pages/Home";
 import "./styles.css";
 
-const Live = lazy(() => import("./pages/Live"));
-const Board = lazy(() => import("./pages/Board"));
-const Rounds = lazy(() => import("./pages/Rounds"));
-const RoundPage = lazy(() => import("./pages/Rounds").then((m) => ({ default: m.RoundPage })));
-const Me = lazy(() => import("./pages/Me"));
-const WalletPage = lazy(() => import("./pages/Me").then((m) => ({ default: m.WalletPage })));
-const Docs = lazy(() => import("./pages/Docs"));
+const { Live, Board, Rounds, RoundPage, Me, WalletPage, Docs } = Pages;
 
 const page = (el: React.ReactNode) => <Suspense fallback={<div className="card skeleton" style={{ height: 360 }} />}>{el}</Suspense>;
 
@@ -32,12 +27,13 @@ const router = createBrowserRouter([
       { path: "/wallet/:id", element: page(<WalletPage />) },
       { path: "/docs", element: page(<Docs />) },
       { path: "/docs/:slug", element: page(<Docs />) },
-      { path: "*", element: <Empty title="Nothing brewing here"><Link to="/" className="btn btn-soft">Home</Link></Empty> },
+      { path: "*", element: <Empty title="Nothing brewing here"><AppLink to="/" className="btn btn-soft">Home</AppLink></Empty> },
     ],
   },
 ]);
 
 live.start();
+prefetchAllWhenIdle();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -50,7 +46,10 @@ createRoot(document.getElementById("root")!).render(
 // fold the boot screen away in tiles once the intro has played and the first
 // snapshot is in (instant from cache on a revisit, or after 6s at worst)
 const boot = document.getElementById("boot");
-if (boot) {
+if (boot && (window as unknown as { __bootSkip?: boolean }).__bootSkip) {
+  boot.remove();
+  document.body.classList.add("ready");
+} else if (boot) {
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const minAt = reduced ? 150 : 2700;
   const lift = () => {
@@ -59,6 +58,11 @@ if (boot) {
       requestAnimationFrame(() => {
         boot.classList.add("out");
         document.body.classList.add("ready");
+        try {
+          sessionStorage.setItem("dcaf-intro", "1");
+        } catch {
+          /* ignore */
+        }
         setTimeout(() => boot.remove(), 1400);
       }),
     );

@@ -1,7 +1,7 @@
 import { marked } from "marked";
 import { useEffect, useMemo, useRef } from "react";
-import { Link, NavLink, useNavigate, useParams } from "react-router";
-import { Card, Empty } from "../components/ui";
+import { NavLink, useNavigate, useParams } from "react-router";
+import { AppLink, Card, Empty } from "../components/ui";
 
 // docs/*.md is the single source: readable on GitHub, rendered here.
 const files = import.meta.glob("../../docs/*.md", { query: "?raw", import: "default", eager: true }) as Record<string, string>;
@@ -31,7 +31,7 @@ export default function Docs() {
       const href = a?.getAttribute("href");
       if (a && href?.startsWith("/") && !e.metaKey && !e.ctrlKey) {
         e.preventDefault();
-        nav(href);
+        nav(href, { viewTransition: true });
       }
     };
     el.addEventListener("click", click);
@@ -43,7 +43,7 @@ export default function Docs() {
       <aside className="docs-nav" aria-label="Docs">
         <span className="kicker">Docs</span>
         {DOCS.map((d, k) => (
-          <NavLink key={d.slug} to={`/docs/${d.slug}`} className={({ isActive }) => (isActive || (!slug && k === 0) ? "on" : "")}>
+          <NavLink key={d.slug} to={`/docs/${d.slug}`} viewTransition className={({ isActive }) => (isActive || (!slug && k === 0) ? "on" : "")}>
             <span className="mono">{String(k + 1).padStart(2, "0")}</span> {d.title}
           </NavLink>
         ))}
@@ -52,12 +52,12 @@ export default function Docs() {
         <article className="card prose">
           <div ref={box} dangerouslySetInnerHTML={{ __html: html }} />
           <nav className="docs-pager">
-            {DOCS[i - 1] ? <Link to={`/docs/${DOCS[i - 1].slug}`}>← {DOCS[i - 1].title}</Link> : <span />}
-            {DOCS[i + 1] && <Link to={`/docs/${DOCS[i + 1].slug}`}>{DOCS[i + 1].title} →</Link>}
+            {DOCS[i - 1] ? <AppLink to={`/docs/${DOCS[i - 1].slug}`}>← {DOCS[i - 1].title}</AppLink> : <span />}
+            {DOCS[i + 1] && <AppLink to={`/docs/${DOCS[i + 1].slug}`}>{DOCS[i + 1].title} →</AppLink>}
           </nav>
         </article>
       ) : (
-        <Card><Empty title="No such page"><Link to="/docs" className="btn btn-soft">Docs home</Link></Empty></Card>
+        <Card><Empty title="No such page"><AppLink to="/docs" className="btn btn-soft">Docs home</AppLink></Empty></Card>
       )}
     </div>
   );

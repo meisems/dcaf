@@ -29,6 +29,7 @@
       :root[data-theme="light"] { --ld-bg: #F3F6F5; --ld-ink: #06110C; --ld-dim: rgba(6, 17, 12, .5); --ld-line: rgba(6, 20, 14, .06); --ld-cell: rgba(6, 20, 14, .08); --ld-sh: .25; }
       html, body { margin: 0; background: var(--ld-bg); }
       #boot { position: fixed; inset: 0; z-index: 9999; color: var(--ld-ink); overflow: hidden; display: grid; place-items: center; }
+      #boot.skip { display: none; }
       .ld-wall { position: absolute; inset: 0; background: var(--ld-bg); }
       .ld-wall.tiled { background: none; }
       .ld-wall i { position: absolute; background: var(--ld-bg); transition: transform .6s cubic-bezier(.7, 0, .3, 1) var(--d), opacity .5s ease var(--d); }
@@ -123,6 +124,8 @@
       (function () {
         var boot = document.getElementById("boot");
         var reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+        // the intro plays once per session; reloads go straight to the page
+        try { if (sessionStorage.getItem("dcaf-intro")) { boot.classList.add("skip"); window.__bootSkip = true; return; } } catch (e) {}
 
         // 1. the pixel bean: cells inside the rotated ellipse, shaded toward a top-left light, crease cut in
         var px = boot.querySelector(".ld-px"), N = 12, S = 132 / N, html = "";

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router";
+import { useParams } from "react-router";
 import { LINKS } from "../config";
-import { Avatar, Card, Empty, PageHead, Streak } from "../components/ui";
+import { AppLink, Avatar, Card, Empty, PageHead, Streak } from "../components/ui";
 import { getRound, peekRound, useLive, type Round } from "../lib/api";
 import { acct, ago, clock, dateTime, near, usd } from "../lib/format";
 import { useNow } from "../lib/hooks";
@@ -25,16 +25,16 @@ export default function Rounds() {
           <section className="card spark-card">
             <div className="spark" role="img" aria-label="Vault per round">
               {recent.map((r) => (
-                <Link to={`/rounds/${r.no}`} key={r.no} className={`spark-col${r.golden ? " gold" : ""}${r.qualifiers === 0 ? " none" : ""}`} title={`#${r.no} · ${near(r.pool)}`}>
+                <AppLink to={`/rounds/${r.no}`} key={r.no} className={`spark-col${r.golden ? " gold" : ""}${r.qualifiers === 0 ? " none" : ""}`} title={`#${r.no} · ${near(r.pool)}`}>
                   <i style={{ height: `${Math.max(5, (r.pool / peak) * 100)}%` }} />
-                </Link>
+                </AppLink>
               ))}
             </div>
           </section>
           <ul className="rounds">
             {rounds.map((r) => (
               <li key={r.no}>
-                <Link to={`/rounds/${r.no}`} className="round-row">
+                <AppLink to={`/rounds/${r.no}`} className="round-row">
                   <span className="round-no">#{r.no}</span>
                   <span className="round-when"><b>{clock(r.at)}</b><small className="muted">{ago(r.at, now)}</small></span>
                   <span className="round-tags">
@@ -42,7 +42,7 @@ export default function Rounds() {
                     {r.qualifiers === 0 ? <span className="pill pill-info">Stacked</span> : <span className="muted">{r.payouts.length} paid</span>}
                   </span>
                   <span className="round-amt"><b>{near(r.qualifiers ? r.paid : r.pool)}</b><small className="muted">{r.qualifiers ? (u ? usd(r.paid * u) : "") : "rolled"}</small></span>
-                </Link>
+                </AppLink>
               </li>
             ))}
           </ul>
@@ -61,13 +61,13 @@ export function RoundPage() {
   }, [no]);
 
   if (r === undefined) return <div className="card skeleton" style={{ height: 380 }} />;
-  if (r === null) return <Card><Empty title={`No round #${no}`}><Link to="/rounds" className="btn btn-soft">All rounds</Link></Empty></Card>;
+  if (r === null) return <Card><Empty title={`No round #${no}`}><AppLink to="/rounds" className="btn btn-soft">All rounds</AppLink></Empty></Card>;
   return (
     <>
       <PageHead kicker={dateTime(r.at)} title={`Round #${r.no}`}>
         <div className="row-gap">
-          {Number(no) > 1 && <Link className="btn btn-soft" to={`/rounds/${Number(no) - 1}`}>← #{Number(no) - 1}</Link>}
-          <Link className="btn btn-soft" to={`/rounds/${Number(no) + 1}`}>#{Number(no) + 1} →</Link>
+          {Number(no) > 1 && <AppLink className="btn btn-soft" to={`/rounds/${Number(no) - 1}`}>← #{Number(no) - 1}</AppLink>}
+          <AppLink className="btn btn-soft" to={`/rounds/${Number(no) + 1}`}>#{Number(no) + 1} →</AppLink>
         </div>
       </PageHead>
       <section className="kpis three">
@@ -84,7 +84,7 @@ export function RoundPage() {
                 {r.payouts.map((p, k) => (
                   <tr key={p.w}>
                     <td className="muted">{k + 1}</td>
-                    <td><Link className="who" to={`/wallet/${p.w}`}><Avatar id={p.w} size={22} /><span className="mono">{acct(p.w, 22)}</span></Link></td>
+                    <td><AppLink className="who" to={`/wallet/${p.w}`}><Avatar id={p.w} size={22} /><span className="mono">{acct(p.w, 22)}</span></AppLink></td>
                     <td><Streak n={p.streak} /></td>
                     <td className="r hide-sm muted">{near(p.buy)}</td>
                     <td className="r"><b>{near(p.amount)}</b></td>
