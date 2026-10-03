@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { LINKS } from "../config";
 import { getWallet, peekWallet, type Snapshot, type WalletReport } from "../lib/api";
-import { acct, ago, dateTime, mmss, near, pct } from "../lib/format";
-import { useNow } from "../lib/hooks";
+import { acct, dateTime, near, pct } from "../lib/format";
 import { ArrowUpRight, Check, Chevron, Cross, Dots } from "./Icons";
-import { Avatar, Num, StatusPill, Streak } from "./ui";
+import { Ago, Avatar, Left, Num, StatusPill, Streak } from "./ui";
 
 /** Fetch a wallet report and keep it fresh (every ~3s while visible). */
 export function useReport(id: string | null) {
@@ -19,7 +18,7 @@ export function useReport(id: string | null) {
     let t: ReturnType<typeof setTimeout>;
     const load = () =>
       getWallet(id)
-        .then((r) => want.current === id && (setRep(r), setErr(null)))
+        .then((r) => want.current === id && (setRep(r), setErr((e) => (e ? null : e))))
         .catch((e: Error) => want.current === id && setErr(e.message))
         .finally(() => want.current === id && (t = setTimeout(load, document.hidden ? 15000 : 3000)));
     void load();
@@ -29,10 +28,8 @@ export function useReport(id: string | null) {
 }
 
 export function WalletCard({ rep, snap, mine }: { rep: WalletReport; snap: Snapshot; mine: boolean }) {
-  const now = useNow();
   const { info } = snap;
   const R = info.rules;
-  const left = Math.max(0, info.nextRoundAt - now);
   const [open, setOpen] = useState(false);
   const inTop = rep.rank !== null && rep.rank <= R.topN;
 
@@ -44,13 +41,13 @@ export function WalletCard({ rep, snap, mine }: { rep: WalletReport; snap: Snaps
           ? { h: `#${rep.rank} in round ${info.windowNo}`, s: `≈ ${near(rep.est)} · ${pct(rep.share)} of the vault` }
           : { h: `#${rep.rank} · outside top ${R.topN}`, s: "Buy more or keep the streak to climb" };
       case "waiting":
-        return { h: "Streak at risk", s: `Buy within ${mmss(left)}` };
+        return { h: "Streak at risk", s: <>Buy within <Left at={info.nextRoundAt} /></> };
       case "notyet":
         return { h: "Warming up", s: `${near(R.minTotal - rep.total)} more to count` };
       case "out":
         return { h: "Out for good", s: rep.outReason === "sold" ? "Sold once" : "Moved tokens" };
       default:
-        return { h: "No streak", s: `Buy within ${mmss(left)}` };
+        return { h: "No streak", s: <>Buy within <Left at={info.nextRoundAt} /></> };
     }
   })();
 
@@ -63,7 +60,7 @@ export function WalletCard({ rep, snap, mine }: { rep: WalletReport; snap: Snaps
         <Avatar id={rep.id} size={44} />
         <div className="wcard-id">
           <a href={LINKS.account(rep.id)} target="_blank" rel="noreferrer" className="mono">{acct(rep.id, 30)} <ArrowUpRight size={13} /></a>
-          <small className="muted">{rep.firstAt ? `since ${ago(rep.firstAt, now)}` : "new"}{rep.lastBuyAt ? ` · last buy ${ago(rep.lastBuyAt, now)}` : ""}</small>
+          <small className="muted">{rep.firstAt ? <>since <Ago t={rep.firstAt} /></> : "new"}{rep.lastBuyAt ? <> · last buy <Ago t={rep.lastBuyAt} /></> : null}</small>
         </div>
         <StatusPill s={rep.known ? rep.status : "idle"} />
       </div>

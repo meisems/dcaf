@@ -2,17 +2,16 @@
 import { LINKS, SYMBOL } from "../config";
 import { ArrowRight, Bean, Bell, Coins, Flame, Lock, Users, Vault } from "../components/Icons";
 import { Orbit } from "../components/Orbit";
-import { AppLink, Avatar, Card, Empty, More, Num, StatusPill, Streak, useUi } from "../components/ui";
+import { memo } from "react";
+import { Ago, AppLink, Avatar, Card, Empty, Left, More, Num, StatusPill, Streak, useUi } from "../components/ui";
 import { useLive, type Snapshot } from "../lib/api";
-import { acct, ago, mmss, near, usd } from "../lib/format";
+import { acct, near, usd } from "../lib/format";
 import { useMe } from "../lib/me";
 import { disableReminders, enableReminders, useReminders } from "../lib/remind";
 import { useFlip } from "../lib/flip";
-import { useNow } from "../lib/hooks";
 
 export default function Home() {
   const { snap } = useLive();
-  const now = useNow();
   const i = snap?.info;
   const R = i?.rules;
   const ranks = useFlip<HTMLOListElement>(snap?.board.next);
@@ -39,8 +38,8 @@ export default function Home() {
         <div className="hero-orbit">{snap ? <Orbit snap={snap} /> : <div className="orbit-card skeleton" />}</div>
       </section>
 
-      {snap && <MeStrip snap={snap} now={now} />}
-      {snap && snap.trades.length > 0 && <Tape snap={snap} now={now} />}
+      {snap && <MeStrip snap={snap} />}
+      {snap && snap.trades.length > 0 && <Tape trades={snap.trades} />}
 
       <section className="kpis" data-reveal>
         <Kpi icon={<Vault size={18} />} label="Vault" v={i?.pool ?? 0} fmt={(n) => near(n)} sub={i?.usdPerNear ? usd((i.pool ?? 0) * i.usdPerNear) : undefined} hot />
@@ -80,7 +79,7 @@ export default function Home() {
                   <span className={`side ${t.side}`}>{t.side === "buy" ? "Buy" : "Sell"}</span>
                   <AppLink to={`/wallet/${t.w}`} className="mono">{acct(t.w, 18)}</AppLink>
                   <b>{near(t.q)}</b>
-                  <small className="muted">{ago(t.t, now)}</small>
+                  <small className="muted"><Ago t={t.t} /></small>
                 </li>
               ))}
             </ul>
@@ -94,7 +93,7 @@ export default function Home() {
 }
 
 /** Your wallet in one line: streak, where you stand, what to do next. */
-function MeStrip({ snap, now }: { snap: Snapshot; now: number }) {
+function MeStrip({ snap }: { snap: Snapshot }) {
   const me = useMe();
   const { mine } = useUi();
   const remind = useReminders();
@@ -106,15 +105,14 @@ function MeStrip({ snap, now }: { snap: Snapshot; now: number }) {
     );
   if (!mine) return <div className="me-strip skeleton" />;
   const i = snap.info;
-  const left = Math.max(0, i.nextRoundAt - now);
   const topN = i.rules.topN;
   const msg =
     mine.status === "dcaing"
       ? mine.rank !== null && mine.rank <= topN ? <>#{mine.rank} · <b>≈ {near(mine.est)}</b></> : <>#{mine.rank} · outside top {topN}</>
-      : mine.status === "waiting" ? <>Buy within <b className="mono">{mmss(left)}</b></>
+      : mine.status === "waiting" ? <>Buy within <b className="mono"><Left at={i.nextRoundAt} /></b></>
       : mine.status === "notyet" ? <>{near(i.rules.minTotal - mine.total)} more to count</>
       : mine.status === "out" ? <>Out for good</>
-      : <>Buy within <b className="mono">{mmss(left)}</b></>;
+      : <>Buy within <b className="mono"><Left at={i.nextRoundAt} /></b></>;
   const canBuy = mine.status !== "out" && mine.status !== "dcaing";
   return (
     <div className={`me-strip st-${mine.status}`}>
@@ -135,14 +133,14 @@ function MeStrip({ snap, now }: { snap: Snapshot; now: number }) {
 }
 
 /** A marquee of the latest trades: who is buying, right now. */
-function Tape({ snap, now }: { snap: Snapshot; now: number }) {
-  const items = snap.trades.slice(-18).reverse();
+const Tape = memo(function Tape({ trades }: { trades: Snapshot["trades"] }) {
+  const items = trades.slice(-18).reverse();
   const row = items.map((t) => (
     <AppLink to={`/wallet/${t.w}`} key={t.tx + t.w} className={`tape-item ${t.side}`}>
       <Avatar id={t.w} size={18} />
       <span className="mono">{acct(t.w, 16)}</span>
       <b>{t.side === "buy" ? "+" : "−"}{near(t.q)}</b>
-      <small>{ago(t.t, now)}</small>
+      <small><Ago t={t.t} /></small>
     </AppLink>
   ));
   return (
@@ -150,7 +148,7 @@ function Tape({ snap, now }: { snap: Snapshot; now: number }) {
       <div className="tape-lane">{row}<span className="tape-dup" aria-hidden>{row}</span></div>
     </div>
   );
-}
+});
 
 function Kpi({ icon, label, v, fmt, sub, hot }: { icon: React.ReactNode; label: string; v: number; fmt: (n: number) => string; sub?: string; hot?: boolean }) {
   return (

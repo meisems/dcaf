@@ -11,7 +11,8 @@ export function Mark({ size = 36, shadow = false, live = false, title }: { size?
   const u = useId().replace(/:/g, "");
   const id = (k: string) => `${k}${u}`;
   return (
-    <svg className={`mark${live ? " mark-live" : ""}`} width={size} height={size} viewBox="0 0 64 64" role={title ? "img" : undefined} aria-hidden={!title} aria-label={title}>
+    <span className={`mark${live ? " mark-live" : ""}`} style={{ width: size, height: size }} role={title ? "img" : undefined} aria-hidden={!title} aria-label={title}>
+    <svg className="mark-art" width={size} height={size} viewBox="0 0 64 64" aria-hidden>
       <defs>
         <radialGradient id={id("skin")} cx="40%" cy="30%" r="78%">
           <stop offset="0" stopColor="#9DFFD8" />
@@ -56,9 +57,14 @@ export function Mark({ size = 36, shadow = false, live = false, title }: { size?
       </g>
       <g clipPath={`url(#${id("clip")})`}>
         <ellipse {...BEAN} fill="none" stroke="#001A10" strokeOpacity=".55" strokeWidth="3" filter={`url(#${id("ao")})`} />
-        {live && <path className="mark-charge" d={STEPS} fill="none" stroke="#9DFFD8" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" pathLength={1} />}
       </g>
     </svg>
+    {live && (
+      <svg className="mark-fx" width={size} height={size} viewBox="0 0 64 64" aria-hidden>
+        <path className="mark-charge" d={STEPS} fill="none" stroke="#9DFFD8" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" pathLength={1} />
+      </svg>
+    )}
+    </span>
   );
 }
 

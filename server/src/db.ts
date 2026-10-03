@@ -56,6 +56,12 @@ export type Stmt = {
 
 export function makeDb(driver: Driver) {
   for (const s of SCHEMA) driver.exec(s);
+  // v2: a payout's signed transaction is stored before it is sent, so retries can never pay twice
+  try {
+    driver.exec("ALTER TABLE payouts ADD COLUMN signed TEXT");
+  } catch {
+    /* already there */
+  }
   const prepare = (sql: string): Stmt => ({
     run: (...a) => driver.run(sql, a),
     get: (...a) => driver.all(sql, a)[0],

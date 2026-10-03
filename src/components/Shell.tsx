@@ -28,34 +28,38 @@ export function Shell() {
   const { rep: mine } = useReport(me);
   const ui = useMemo(() => ({ openSearch: () => setSearch(true), mine }), [mine]);
   const loc = useLocation();
-  useTabTitle();
-  useRoundToasts();
-  useStreakReminder(mine);
 
-  // cards light up under the cursor; the hero glow trails it
+  // cards light up under the cursor; the hero glow trails it. At most once a frame.
   useEffect(() => {
-    const move = (e: PointerEvent) => {
+    if (!window.matchMedia("(hover: hover)").matches) return;
+    let last: PointerEvent | null = null;
+    let raf = 0;
+    const paint = () => {
+      raf = 0;
+      const e = last!;
       const el = (e.target as HTMLElement).closest?.(".card, .kpi, .step, .pod, .round-row, .wcard, .hero") as HTMLElement | null;
       if (!el) return;
       const r = el.getBoundingClientRect();
-      el.style.setProperty("--mx", `${e.clientX - r.left}px`);
-      el.style.setProperty("--my", `${e.clientY - r.top}px`);
+      el.style.setProperty("--mx", `${Math.round(e.clientX - r.left)}px`);
+      el.style.setProperty("--my", `${Math.round(e.clientY - r.top)}px`);
     };
+    const move = (e: PointerEvent) => ((last = e), raf || (raf = requestAnimationFrame(paint)));
     window.addEventListener("pointermove", move, { passive: true });
-    return () => window.removeEventListener("pointermove", move);
+    return () => (window.removeEventListener("pointermove", move), cancelAnimationFrame(raf));
   }, []);
 
-  // sections ease in as they scroll into view
+  // sections ease in as they scroll into view (DOM changes are batched into one scan a frame)
   useEffect(() => {
     const io = new IntersectionObserver(
       (es) => es.forEach((e) => e.isIntersecting && (e.target.classList.add("seen"), io.unobserve(e.target))),
       { rootMargin: "0px 0px -6% 0px" },
     );
-    const scan = () => document.querySelectorAll("[data-reveal]:not(.seen)").forEach((n) => io.observe(n));
+    let raf = 0;
+    const scan = () => ((raf = 0), document.querySelectorAll("[data-reveal]:not(.seen)").forEach((n) => io.observe(n)));
     scan();
-    const mo = new MutationObserver(scan);
+    const mo = new MutationObserver(() => raf || (raf = requestAnimationFrame(scan)));
     mo.observe(document.getElementById("root")!, { childList: true, subtree: true });
-    return () => (io.disconnect(), mo.disconnect());
+    return () => (io.disconnect(), mo.disconnect(), cancelAnimationFrame(raf));
   }, []);
 
   useEffect(() => {
@@ -72,6 +76,7 @@ export function Shell() {
 
   return (
     <UiCtx.Provider value={ui}>
+      <Watchers mine={mine} />
       <Nav />
       <Status />
       <main className="wrap page" key={loc.pathname.split("/")[1] || "home"}>
@@ -367,6 +372,14 @@ function Footer() {
       </div>
     </footer>
   );
+}
+
+/** The per-second background jobs, kept in their own leaf so the shell itself never re-renders on the clock. */
+function Watchers({ mine }: { mine: WalletReport | null }) {
+  useTabTitle();
+  useRoundToasts();
+  useStreakReminder(mine);
+  return null;
 }
 
 /** A small toast each time a round closes, a louder one when you were paid. */

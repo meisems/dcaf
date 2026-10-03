@@ -31,6 +31,8 @@ function persist(snap: Snapshot) {
   }
 }
 
+const idle = (f: () => void) => ("requestIdleCallback" in window ? requestIdleCallback(f, { timeout: 2000 }) : setTimeout(f, 200));
+
 /** One poller for the whole app: every page reads the same live snapshot. */
 class Live {
   state: State;
@@ -38,6 +40,7 @@ class Live {
   private timer: ReturnType<typeof setTimeout> | null = null;
   private fails = 0;
   private savedAt = 0;
+  private body = "";
 
   constructor() {
     const cached = typeof window === "undefined" ? null : restore();
@@ -53,15 +56,25 @@ class Live {
       // "no-cache" = revalidate with the ETag: unchanged data comes back as a tiny 304
       const r = await fetch(`${API_URL}/api/snapshot`, { cache: "no-cache" });
       if (!r.ok) throw new Error(String(r.status));
-      const snap = (await r.json()) as Snapshot;
-      this.state = { snap, online: true, loaded: true, stale: false };
+      const text = await r.text();
       this.fails = 0;
-      if (Date.now() - this.savedAt > 10_000) (this.savedAt = Date.now()), persist(snap);
+      if (text === this.body && this.state.online && !this.state.stale) return this.next(false);
+      this.body = text;
+      const snap = JSON.parse(text) as Snapshot;
+      this.state = { snap, online: true, loaded: true, stale: false };
+      if (Date.now() - this.savedAt > 10_000) (this.savedAt = Date.now()), idle(() => persist(snap));
     } catch {
       this.fails += 1;
-      this.state = { ...this.state, online: this.fails < 3, loaded: true };
+      const online = this.fails < 3;
+      if (online === this.state.online && this.state.loaded) return this.next(false);
+      this.state = { ...this.state, online, loaded: true };
     }
-    this.subs.forEach((f) => f());
+    this.next(true);
+  }
+
+  /** Tell subscribers (only when something changed) and schedule the next poll. */
+  private next(changed: boolean) {
+    if (changed) this.subs.forEach((f) => f());
     const hidden = typeof document !== "undefined" && document.hidden;
     this.timer = setTimeout(() => void this.poll(), hidden ? 15_000 : Math.min(2000 * 2 ** Math.max(0, this.fails - 1), 20_000));
   }
@@ -83,7 +96,7 @@ export function useLive() {
 
 // ---------------------------------------------------------------- per-item caches
 
-const wallets = new Map<string, { at: number; rep: WalletReport }>();
+const wallets = new Map<string, { at: number; rep: WalletReport; text: string }>();
 const rounds = new Map<number, Round>();
 
 /** Whatever we last saw for this wallet (for an instant first paint). */
@@ -92,8 +105,11 @@ export const peekWallet = (id: string) => wallets.get(id)?.rep ?? null;
 export async function getWallet(id: string): Promise<WalletReport> {
   const r = await fetch(`${API_URL}/api/wallet/${encodeURIComponent(id)}`, { cache: "no-cache" });
   if (!r.ok) throw new Error(r.status === 400 ? "Not a NEAR account" : "Engine unreachable");
-  const rep = (await r.json()) as WalletReport;
-  wallets.set(id, { at: Date.now(), rep });
+  const text = await r.text();
+  const hit = wallets.get(id);
+  // same bytes as last time: hand back the same object, so nothing downstream re-renders
+  const rep = hit && hit.text === text ? hit.rep : (JSON.parse(text) as WalletReport);
+  wallets.set(id, { at: Date.now(), rep, text });
   if (wallets.size > 50) wallets.delete(wallets.keys().next().value!);
   return rep;
 }

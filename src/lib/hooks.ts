@@ -1,15 +1,28 @@
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useSyncExternalStore } from "react";
 import { nowS } from "./format";
 
-/** Current unix second, re-rendering once a second. */
-export function useNow() {
-  const [n, setN] = useState(nowS);
-  useEffect(() => {
-    const t = setInterval(() => setN(nowS()), 1000);
-    return () => clearInterval(t);
-  }, []);
-  return n;
+// ---------------------------------------------------------------- one clock for the whole app
+// A single timer, aligned to the wall-clock second, so every countdown ticks in the same frame
+// (one render pass a second instead of one per component, drifting apart).
+const nowSubs = new Set<() => void>();
+let nowV = nowS();
+let nowT: ReturnType<typeof setTimeout> | null = null;
+function tick() {
+  nowV = nowS();
+  nowSubs.forEach((f) => f());
+  nowT = setTimeout(tick, 1000 - (Date.now() % 1000) + 4);
 }
+function subNow(f: () => void) {
+  nowSubs.add(f);
+  if (!nowT) (nowV = nowS()), (nowT = setTimeout(tick, 1000 - (Date.now() % 1000) + 4));
+  return () => {
+    nowSubs.delete(f);
+    if (!nowSubs.size && nowT) clearTimeout(nowT), (nowT = null);
+  };
+}
+
+/** Current unix second. Only the component that calls it re-renders each second, so keep callers small. */
+export const useNow = () => useSyncExternalStore(subNow, () => nowV);
 
 // ---------------------------------------------------------------- theme (one store, any caller)
 

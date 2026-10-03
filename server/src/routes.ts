@@ -1,3 +1,4 @@
+import { reads, txs } from "./near.ts";
 import { CFG } from "./config.ts";
 import type { Engine } from "./engine.ts";
 import type { Reader } from "./read.ts";
@@ -22,7 +23,10 @@ export function route(reader: Reader, engine: Engine, path: string, params: URLS
     return {
       status: 200,
       cache: CC.none,
-      body: { ok: true, height: engine.lastHeight, lagSec: Math.max(0, Math.floor(Date.now() / 1000) - engine.lastBlockT), started: engine.started, dryRun: CFG.dryRun },
+      body: {
+        ok: true, height: engine.lastHeight, lagSec: Math.max(0, Math.floor(Date.now() / 1000) - engine.lastBlockT), started: engine.started, dryRun: CFG.dryRun,
+        rpc: { reads: reads().stats(), transactions: txs().stats() },
+      },
     };
   if (path.startsWith("/api/wallet/")) {
     const id = decodeURIComponent(path.slice(12)).toLowerCase();

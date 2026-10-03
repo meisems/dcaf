@@ -1,7 +1,8 @@
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
+import { useNow } from "../lib/hooks";
 
 /** One digit as a rolling strip 0–9: changes slide instead of snapping. */
-function Digit({ d }: { d: number }) {
+const Digit = memo(function Digit({ d }: { d: number }) {
   return (
     <span className="dg" aria-hidden>
       <span className="dg-strip" style={{ transform: `translateY(${-d * 10}%)` }}>
@@ -9,7 +10,7 @@ function Digit({ d }: { d: number }) {
       </span>
     </span>
   );
-}
+});
 
 /** mm:ss with rolling digits and unit labels. Below 60s it turns hot, at 0 it shows the payout state. */
 export function Clock({ left, size = "lg", idle = false }: { left: number; size?: "lg" | "sm"; idle?: boolean }) {
@@ -38,6 +39,11 @@ export function Clock({ left, size = "lg", idle = false }: { left: number; size?
   );
 }
 
+/** A Clock counting down to `at` on the shared second. */
+export const Countdown = memo(function Countdown({ at, size, idle }: { at: number; size?: "lg" | "sm"; idle?: boolean }) {
+  return <Clock left={Math.max(0, at - useNow())} size={size} idle={idle} />;
+});
+
 /**
  * CSS variables that let a ring animate the whole window on the compositor:
  * duration = window length, negative delay = time already elapsed. Fixed per window,
@@ -48,7 +54,7 @@ export function useWindowAnim(windowStart: number, closeAt: number, open: boolea
   const style = useMemo(() => {
     const span = Math.max(1, closeAt - windowStart);
     const elapsed = Math.min(span, Math.max(0, Date.now() / 1000 - windowStart));
-    return { ["--span" as string]: `${span}s`, ["--delay" as string]: `${-elapsed}s` };
+    return { ["--span" as string]: `${span}s`, ["--delay" as string]: `${-elapsed}s`, ["--steps" as string]: Math.round(span * 2) };
   }, [key]);
   return { key, style };
 }

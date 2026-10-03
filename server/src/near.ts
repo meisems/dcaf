@@ -1,9 +1,33 @@
 import { CFG } from "./config.ts";
+import { endpoint, RpcPool } from "./rpc.ts";
 
 const headers = (): Record<string, string> => ({
   "content-type": "application/json",
   ...(CFG.apiKey ? { authorization: `Bearer ${CFG.apiKey}` } : {}),
 });
+
+/** The FastNEAR key only ever goes to FastNEAR hosts. */
+export const authFor = (host: string): Record<string, string> =>
+  CFG.apiKey && (host === "fastnear.com" || host.endsWith(".fastnear.com")) ? { authorization: `Bearer ${CFG.apiKey}` } : {};
+
+let readPool: RpcPool | null = null;
+let txPool: RpcPool | null = null;
+
+/** Reads: public endpoints by speed, private ones as the last resort. */
+export function reads() {
+  return (readPool ??= new RpcPool("reads", [
+    ...CFG.rpcRead.map((u, i) => endpoint(u, false, i)),
+    ...CFG.rpcPrivate.map((u, i) => endpoint(u, true, i)),
+  ], authFor));
+}
+
+/** Transactions: Lava, then the other private endpoints in the order given, then (optionally) public ones. */
+export function txs() {
+  if (txPool) return txPool;
+  const priv = CFG.rpcPrivate.map((u, i) => endpoint(u, true, i));
+  const pub = !priv.length || CFG.txPublicFallback ? CFG.rpcRead.map((u, i) => endpoint(u, false, priv.length + i)) : [];
+  return (txPool = new RpcPool("transactions", [...priv, ...pub], authFor, 20_000, false));
+}
 
 export const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -20,15 +44,8 @@ async function retry<T>(fn: () => Promise<T>, tries = 6): Promise<T> {
   }
 }
 
-export async function rpc<T>(method: string, params: unknown): Promise<T> {
-  return retry(async () => {
-    const r = await fetch(CFG.rpc, { method: "POST", headers: headers(), body: JSON.stringify({ jsonrpc: "2.0", id: "dcaf", method, params }) });
-    if (!r.ok) throw new Error(`rpc ${method}: http ${r.status}`);
-    const j = (await r.json()) as { result?: T; error?: { message?: string; data?: unknown } };
-    if (j.error) throw new Error(`rpc ${method}: ${j.error.message ?? "error"} ${JSON.stringify(j.error.data ?? "")}`);
-    return j.result as T;
-  });
-}
+/** A read-only RPC call, failing over across the read pool. */
+export const rpc = <T>(method: string, params: unknown): Promise<T> => reads().call<T>(method, params);
 
 /** Read-only contract call, JSON in and out. */
 export async function view<T>(contract: string, method: string, args: object = {}): Promise<T> {

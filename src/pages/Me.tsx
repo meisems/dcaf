@@ -4,10 +4,9 @@ import { LINKS } from "../config";
 import { Bean, Bell, Check, Copy, Search } from "../components/Icons";
 import { Mark } from "../components/Logo";
 import { useReport, WalletCard } from "../components/WalletCard";
-import { AppLink, Avatar, Card, Empty, PageHead } from "../components/ui";
+import { Ago, AppLink, Avatar, Card, Empty, PageHead } from "../components/ui";
 import { useLive } from "../lib/api";
-import { acct, ago, isAccountId, near } from "../lib/format";
-import { useNow } from "../lib/hooks";
+import { acct, isAccountId, near } from "../lib/format";
 import { setMe, useMe } from "../lib/me";
 import { disableReminders, enableReminders, useReminders } from "../lib/remind";
 import { useToast } from "../lib/toast";
@@ -60,7 +59,6 @@ function WalletView({ id, mine }: { id: string; mine: boolean }) {
   const { snap } = useLive();
   const { rep, err } = useReport(id);
   const me = useMe();
-  const now = useNow();
   const toast = useToast();
   const remind = useReminders();
   const share = async () => {
@@ -98,7 +96,7 @@ function WalletView({ id, mine }: { id: string; mine: boolean }) {
                 <span className={`side ${t.side}`}>{t.side === "buy" ? "Buy" : "Sell"}</span>
                 <a className="mono" href={LINKS.tx(t.tx)} target="_blank" rel="noreferrer">{t.tx.slice(0, 8)}…</a>
                 <b>{near(t.q)}</b>
-                <small className="muted">{ago(t.t, now)}</small>
+                <small className="muted"><Ago t={t.t} /></small>
               </li>
             ))}
           </ul>

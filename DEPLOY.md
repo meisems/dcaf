@@ -35,12 +35,26 @@ Two Cloudflare projects, both built straight from this GitHub repo. No CLI neede
 | `MIN_BUY` / `MIN_TOTAL` | Text | `0.1` / `1` |
 | `ROUND_MIN` / `ROUND_MAX` | Text | `10` / `15` (minutes) |
 | `VAULT_PRIVATE_KEY` | **Secret** | `ed25519:…` of the vault. **Leave unset for a dry run.** |
-| `FASTNEAR_API_KEY` | Secret | optional, higher rate limits |
+| `LAVA_RPC_URL` | **Secret** | your Lava NEAR mainnet HTTPS endpoint (key inside). First choice for payouts. |
+| `DRPC_RPC_URL` | **Secret** | your dRPC NEAR HTTPS endpoint (key inside). Second choice for payouts. |
+| `PRIVATE_RPC_URLS` | Secret | optional, more private endpoints, comma separated (GetBlock, NodeReal, QuickNode…) |
+| `FASTNEAR_API_KEY` | Secret | optional, higher rate limits (sent to FastNEAR hosts only) |
 
    Saving deploys a new version. `keep_vars` in `wrangler.jsonc` keeps these on every future Git deploy.
 5. Check `https://dcaf-engine.<your-subdomain>.workers.dev/api/health`. `started: true` means it is live.
 
 The fee split is never published: `/api/snapshot` omits `FEE_BPS` and `VAULT_BPS`.
+
+### RPC endpoints
+
+- **Reads** (balances, metadata, price, block height) go to public endpoints, fastest healthy one first. An endpoint that errors, times out or rate-limits is skipped and cooled off (5 s, doubling up to 5 min). Built in, all verified for `block`, view calls and `send_tx`:
+  `free.rpc.fastnear.com`, `rpc.mainnet.fastnear.com`, `near.drpc.org`, `rpc.shitzuapes.xyz`, `rpc.intea.rs`, `near-mainnet.gateway.tatum.io`, `archival-rpc.mainnet.fastnear.com`, `rpc.mainnet.near.org`.
+  Your private endpoints are the last resort for reads, so they're only used when every public one fails.
+- **Transactions** (payouts) go to `LAVA_RPC_URL` first, then `DRPC_RPC_URL`, then `PRIVATE_RPC_URLS` in order. If all of them are down, the already-signed payout is broadcast through the public endpoints (set `TX_PUBLIC_FALLBACK` = `false` to forbid that).
+- Every payout is signed once and stored before it is sent. A timeout or a switch to another RPC re-sends or looks up that same transaction, so a wallet is never paid twice.
+- `RPC_URLS` (Text, comma separated) replaces the public list. `RPC_URL` adds one endpoint in front of it.
+- Lava's old public `near.lava.build` endpoint is discontinued, and Ankr and BlockPI now need keys. Use the URL from your own Lava or dRPC dashboard.
+- `/api/health` shows each endpoint's state by **hostname only**. URLs, and the keys in them, are never shown or logged.
 
 ## 2. Website (Pages)
 

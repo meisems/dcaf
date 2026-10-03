@@ -1,12 +1,25 @@
 import { useEffect, useRef, useState } from "react";
 import type { Snapshot } from "../lib/api";
 import { acct, near } from "../lib/format";
-import { useNow } from "../lib/hooks";
-import { Clock, useWindowAnim } from "./Clock";
+import { Countdown, useWindowAnim } from "./Clock";
 import { Mark } from "./Logo";
 import { Avatar, Num } from "./ui";
 
 const TICKS = 60;
+
+/** True for the last minute of the window: one timer, flips once instead of re-rendering every second. */
+function useUrgent(at: number) {
+  const [u, setU] = useState(false);
+  useEffect(() => {
+    if (!at) return setU(false);
+    const ms = (at - 60) * 1000 - Date.now();
+    setU(ms <= 0 && at * 1000 > Date.now());
+    if (ms <= 0) return;
+    const t = setTimeout(() => setU(true), ms);
+    return () => clearTimeout(t);
+  }, [at]);
+  return u;
+}
 type Ping = { key: string; who: string; q: number };
 
 /**
@@ -14,12 +27,10 @@ type Ping = { key: string; who: string; q: number };
  * this window's DCAers circle the bean, and every buy sends a ripple.
  */
 export function Orbit({ snap }: { snap: Snapshot }) {
-  const now = useNow();
   const { info } = snap;
   const open = info.started && info.nextRoundAt > 0;
-  const left = Math.max(0, info.nextRoundAt - now);
   const anim = useWindowAnim(info.windowStart, info.nextRoundAt, open);
-  const urgent = open && left <= 60;
+  const urgent = useUrgent(open ? info.nextRoundAt : 0);
   const crew = snap.board.next.slice(0, 12);
   const topN = info.rules.topN;
 
@@ -66,7 +77,6 @@ export function Orbit({ snap }: { snap: Snapshot }) {
             </mask>
           </defs>
           <circle cx="170" cy="170" r="128" fill="url(#core)" />
-          <circle cx="170" cy="170" r="112" className="orbit-ring dashed" />
           <circle cx="170" cy="170" r="150" className="orbit-ring" />
           {/* 60 radial ticks = one thick dashed circle; the lit copy is revealed by the running mask */}
           <g transform="rotate(-90 170 170)">
@@ -78,11 +88,14 @@ export function Orbit({ snap }: { snap: Snapshot }) {
             </g>
           </g>
           <g key={anim.key}>
+            <circle cx="170" cy="170" r="150" pathLength={1} className="orbit-arc glow run-arc" stroke="url(#arc)" transform="rotate(-90 170 170)" />
             <circle cx="170" cy="170" r="150" pathLength={1} className="orbit-arc run-arc" stroke="url(#arc)" transform="rotate(-90 170 170)" />
-            {open && <g className="run-head"><circle className="orbit-head" r="5" cx="170" cy="20" /></g>}
           </g>
           {pings.map((p) => <circle key={p.key} className="orbit-ping" cx="170" cy="170" r="60" />)}
         </svg>
+
+        <svg viewBox="0 0 340 340" className="orbit-spin" aria-hidden><circle cx="170" cy="170" r="112" className="orbit-ring dashed" /></svg>
+        {open && <div key={anim.key} className="orbit-headwrap" style={anim.style} aria-hidden><i className="orbit-head" /></div>}
 
         <div className="orbit-crew" style={{ ["--n" as string]: Math.max(1, crew.length) }}>
           {crew.map((r, k) => (
@@ -94,7 +107,7 @@ export function Orbit({ snap }: { snap: Snapshot }) {
 
         <div className="orbit-core">
           <div className="orbit-bean"><Mark size={104} shadow live /></div>
-          <Clock left={left} idle={!open} />
+          <Countdown at={info.nextRoundAt} idle={!open} />
         </div>
 
         <div className="orbit-tags">

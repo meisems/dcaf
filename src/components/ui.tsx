@@ -1,8 +1,10 @@
-import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { createContext, memo, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, type LinkProps } from "react-router";
 import { prefetchWallet, type WalletReport } from "../lib/api";
 import { prefetchPath } from "../lib/prefetch";
 import type { Status } from "../lib/api";
+import { ago, mmss } from "../lib/format";
+import { useNow } from "../lib/hooks";
 import { Flame } from "./Icons";
 
 // ---------------------------------------------------------------- app-wide UI actions
@@ -56,6 +58,18 @@ export function Num({ v, fmt, className }: { v: number; fmt: (n: number) => stri
   }, [v]);
   return <span className={className}>{fmt(shown)}</span>;
 }
+
+// ---------------------------------------------------------------- live text (the only things that tick)
+
+/** "12s ago", kept current. */
+export const Ago = memo(function Ago({ t }: { t: number }) {
+  return <>{ago(t, useNow())}</>;
+});
+
+/** mm:ss until `at`. */
+export const Left = memo(function Left({ at }: { at: number }) {
+  return <>{mmss(Math.max(0, at - useNow()))}</>;
+});
 
 // ---------------------------------------------------------------- small pieces
 

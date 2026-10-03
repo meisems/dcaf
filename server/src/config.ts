@@ -1,4 +1,5 @@
 import { DEFAULT_RULES } from "../../shared/rules.ts";
+import { PUBLIC_RPC } from "./rpc.ts";
 import type { Rules } from "../../shared/types.ts";
 
 /**
@@ -41,7 +42,13 @@ function build(e: EnvLike) {
 
   return {
     network,
-    rpc: e.RPC_URL || (main ? "https://free.rpc.fastnear.com" : "https://test.rpc.fastnear.com"),
+    // reads: public endpoints with failover (RPC_URLS replaces the built-in list, RPC_URL is tried first)
+    rpcRead: [...new Set([...list(e.RPC_URL), ...(list(e.RPC_URLS).length ? list(e.RPC_URLS) : PUBLIC_RPC[network])])],
+    // private endpoints (keys inside the URL, so set them as Secrets): Lava first for transactions,
+    // then dRPC and any others; also the last resort for reads
+    rpcPrivate: [...new Set([...list(e.LAVA_RPC_URL), ...list(e.DRPC_RPC_URL), ...list(e.PRIVATE_RPC_URLS)])],
+    // if every private endpoint is down, broadcast the (already signed) payout through the public ones
+    txPublicFallback: e.TX_PUBLIC_FALLBACK !== "false",
     txApi: e.TX_API_URL || (main ? "https://tx.main.fastnear.com" : "https://tx.test.fastnear.com"),
     apiKey: e.FASTNEAR_API_KEY || "",
     token,

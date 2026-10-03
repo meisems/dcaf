@@ -1,17 +1,15 @@
 import { useMemo, useState } from "react";
 
 import { PriceChart } from "../components/PriceChart";
-import { AppLink, Avatar, Card, Empty, PageHead, StatusPill, Streak } from "../components/ui";
+import { Ago, AppLink, Avatar, Card, Empty, PageHead, StatusPill, Streak } from "../components/ui";
 import { useLive, type Status } from "../lib/api";
-import { acct, ago, near } from "../lib/format";
-import { Clock } from "../components/Clock";
-import { useNow } from "../lib/hooks";
+import { acct, near } from "../lib/format";
+import { Countdown, useWindowAnim } from "../components/Clock";
 
 type Trader = { id: string; buys: number; sells: number; bought: number; sold: number; last: number; status: Status | null; streak: number };
 
 export default function Live() {
   const { snap } = useLive();
-  const now = useNow();
   const [tab, setTab] = useState<"dca" | "all">("dca");
   const [side, setSide] = useState<"all" | "buy" | "sell">("all");
 
@@ -30,10 +28,9 @@ export default function Live() {
     return [...m.values()].sort((a, b) => b.last - a.last);
   }, [snap]);
 
-  if (!snap) return <div className="card skeleton" style={{ height: 420 }} />;
-  const i = snap.info;
-  const span = Math.max(1, i.nextRoundAt - i.windowStart);
-  const prog = i.started ? Math.min(1, (now - i.windowStart) / span) : 0;
+  const i = snap?.info;
+  const anim = useWindowAnim(i?.windowStart ?? 0, i?.nextRoundAt ?? 0, !!i?.started);
+  if (!snap || !i) return <div className="card skeleton" style={{ height: 420 }} />;
   const dcaers = snap.board.next;
 
   return (
@@ -42,8 +39,8 @@ export default function Live() {
         <div className="window-pill">
           <span className="live-dot" />
           <span>{i.started ? `#${i.windowNo}` : "soon"}</span>
-          <Clock left={Math.max(0, i.nextRoundAt - now)} size="sm" idle={!i.started} />
-          <div className="wbar"><i style={{ width: `${prog * 100}%` }} /></div>
+          <Countdown at={i.nextRoundAt} size="sm" idle={!i.started} />
+          <div className="wbar" style={anim.style}>{i.started && <i key={anim.key} className="run-bar" />}</div>
         </div>
       </PageHead>
 
@@ -91,7 +88,7 @@ export default function Live() {
                       <td>{t.status ? <StatusPill s={t.status} /> : <span className="muted">–</span>}{t.streak > 0 && <> <Streak n={t.streak} size={12} /></>}</td>
                       <td className="r">{near(t.bought)} <small className="muted">×{t.buys}</small></td>
                       <td className="r hide-sm">{t.sells ? near(t.sold) : <span className="muted">–</span>}</td>
-                      <td className="r muted">{ago(t.last, now)}</td>
+                      <td className="r muted"><Ago t={t.last} /></td>
                     </tr>
                   ))}
                 </tbody>
@@ -119,7 +116,7 @@ export default function Live() {
                   <span className={`side ${t.side}`}>{t.side === "buy" ? "Buy" : "Sell"}</span>
                   <AppLink to={`/wallet/${t.w}`} className="mono">{acct(t.w, 16)}</AppLink>
                   <b>{near(t.q)}</b>
-                  <small className="muted">{ago(t.t, now)}</small>
+                  <small className="muted"><Ago t={t.t} /></small>
                 </li>
               ))}
             </ul>

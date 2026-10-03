@@ -28,7 +28,8 @@ export function PriceChart({ snap }: { snap: Snapshot }) {
 
   const { info } = snap;
   const end = snap.trades.at(-1)?.t ?? info.windowStart;
-  const now = Math.max(end, Math.floor(Date.now() / 1000));
+  // snapped to 5s so hover/re-renders reuse the same geometry
+  const now = Math.max(end, Math.ceil(Date.now() / 5000) * 5);
   const from = now - range.s;
   const pts = useMemo(() => snap.trades.filter((t) => t.t >= from), [snap.trades, from]);
   const prev = useMemo(() => [...snap.trades].reverse().find((t) => t.t < from), [snap.trades, from]);
@@ -61,6 +62,19 @@ export function PriceChart({ snap }: { snap: Snapshot }) {
     const tTicks = [0.12, 0.37, 0.62, 0.87].map((f) => from + f * (now - from));
     return { x, y, d, area, ticks, tTicks };
   }, [pts, prev, from, now, W]);
+
+  const dots = useMemo(
+    () =>
+      geo &&
+      pts.map((t) => {
+        const inWin = t.side === "buy" && t.t >= info.windowStart;
+        return (
+          <circle key={t.tx} cx={geo.x(t.t)} cy={geo.y(t.p)} r={t.side === "sell" ? 4 : inWin ? 4.5 : 3}
+            className={t.side === "sell" ? "pt-sell" : inWin ? "pt-in" : "pt-old"} />
+        );
+      }),
+    [geo, pts, info.windowStart],
+  );
 
   const onMove = (e: React.PointerEvent<SVGSVGElement>) => {
     if (!geo || !pts.length) return;
@@ -129,13 +143,7 @@ export function PriceChart({ snap }: { snap: Snapshot }) {
             )}
             <path d={geo.area} fill="url(#area)" />
             <path d={geo.d} className="line" />
-            {pts.map((t) => {
-              const inWin = t.side === "buy" && t.t >= info.windowStart;
-              return (
-                <circle key={t.tx} cx={geo.x(t.t)} cy={geo.y(t.p)} r={t.side === "sell" ? 4 : inWin ? 4.5 : 3}
-                  className={t.side === "sell" ? "pt-sell" : inWin ? "pt-in" : "pt-old"} />
-              );
-            })}
+            {dots}
             {hover && (
               <g className="cross">
                 <line x1={geo.x(hover.t)} x2={geo.x(hover.t)} y1={PAD.t} y2={H - PAD.b} />

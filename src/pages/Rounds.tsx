@@ -1,14 +1,12 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router";
 import { LINKS } from "../config";
-import { AppLink, Avatar, Card, Empty, PageHead, Streak } from "../components/ui";
+import { Ago, AppLink, Avatar, Card, Empty, PageHead, Streak } from "../components/ui";
 import { getRound, peekRound, useLive, type Round } from "../lib/api";
-import { acct, ago, clock, dateTime, near, usd } from "../lib/format";
-import { useNow } from "../lib/hooks";
+import { acct, clock, dateTime, near, usd } from "../lib/format";
 
 export default function Rounds() {
   const { snap } = useLive();
-  const now = useNow();
   if (!snap) return <div className="card skeleton" style={{ height: 420 }} />;
   const rounds = snap.rounds;
   const recent = rounds.slice(0, 30).reverse();
@@ -36,7 +34,7 @@ export default function Rounds() {
               <li key={r.no}>
                 <AppLink to={`/rounds/${r.no}`} className="round-row">
                   <span className="round-no">#{r.no}</span>
-                  <span className="round-when"><b>{clock(r.at)}</b><small className="muted">{ago(r.at, now)}</small></span>
+                  <span className="round-when"><b>{clock(r.at)}</b><small className="muted"><Ago t={r.at} /></small></span>
                   <span className="round-tags">
                     {r.golden > 0 && <span className="golden">Golden ×{r.golden}</span>}
                     {r.qualifiers === 0 ? <span className="pill pill-info">Stacked</span> : <span className="muted">{r.payouts.length} paid</span>}
