@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <radialGradient id="skin" cx="40%" cy="30%" r="78%">
+      <stop offset="0" stop-color="#9DFFD8"/><stop offset=".35" stop-color="#00EC97"/><stop offset=".75" stop-color="#00B877"/><stop offset="1" stop-color="#025438"/>
+    </radialGradient>
+    <mask id="cut" maskUnits="userSpaceOnUse">
+      <rect width="64" height="64" fill="#fff"/>
+      <path d="M23.4 41.6v-3.4h5.7v-6.7h5.7v-6.7h5.7v-3.4" fill="none" stroke="#000" stroke-width="3.8" stroke-linecap="round" stroke-linejoin="round"/>
+    </mask>
+    <filter id="lit" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="5" result="dome"/>
+      <feGaussianBlur in="SourceAlpha" stdDeviation="1.1" result="edge"/>
+      <feComposite in="dome" in2="edge" operator="arithmetic" k2=".75" k3=".45" result="h"/>
+      <feSpecularLighting in="h" surfaceScale="5" specularConstant=".85" specularExponent="18" lighting-color="#E9FFF6" result="s"><fePointLight x="-20" y="-40" z="60"/></feSpecularLighting>
+      <feComposite in="s" in2="SourceAlpha" operator="in" result="s2"/>
+      <feDiffuseLighting in="h" surfaceScale="5" diffuseConstant="1" lighting-color="#fff" result="d"><feDistantLight azimuth="230" elevation="52"/></feDiffuseLighting>
+      <feComposite in="SourceGraphic" in2="d" operator="arithmetic" k1=".75" k2=".42" result="shaded"/>
+      <feComposite in="shaded" in2="s2" operator="arithmetic" k2="1" k3=".8"/>
+    </filter>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="#050607"/>
+  <ellipse cx="32" cy="31" rx="17.2" ry="23.6" transform="rotate(32 32 31)" fill="#00140D"/>
+  <g filter="url(#lit)"><g mask="url(#cut)"><ellipse cx="32" cy="31" rx="17.2" ry="23.6" transform="rotate(32 32 31)" fill="url(#skin)"/></g></g>
+</svg>

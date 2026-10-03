@@ -1,0 +1,17 @@
+// Cloudflare Worker for the dcaf engine. Deployed by Workers Builds from GitHub (no CLI needed):
+// Workers & Pages → Create → Import a repository → root directory "server".
+// Variables and secrets live in the dashboard (Settings → Variables and Secrets); keep_vars keeps them on redeploy.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "dcaf-engine",
+  "main": "src/worker.ts",
+  "compatibility_date": "2026-06-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "keep_vars": true,
+  "durable_objects": {
+    "bindings": [{ "name": "ENGINE", "class_name": "EngineDO" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["EngineDO"] }],
+  "triggers": { "crons": ["* * * * *"] },
+  "observability": { "enabled": true }
+}

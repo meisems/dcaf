@@ -1,0 +1,22 @@
+{
+  "name": "dcaf-engine",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --port 8787",
+    "start:node": "node --disable-warning=ExperimentalWarning src/index.ts",
+    "test": "node --disable-warning=ExperimentalWarning --test \"test/*.test.ts\"",
+    "check": "tsc -p . && tsc -p tsconfig.worker.json",
+    "build:worker": "wrangler deploy --dry-run --outdir .wrangler-build"
+  },
+  "dependencies": {
+    "near-api-js": "^7.3.1"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261002.1",
+    "@types/node": "^26.6.4",
+    "typescript": "^7.0.2",
+    "wrangler": "^4.147.0"
+  }
+}
