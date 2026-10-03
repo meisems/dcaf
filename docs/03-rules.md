@@ -31,6 +31,8 @@ A wallet is paid in a round only if **all** of these are true when the window cl
 
 The token contract, DEX contracts, the vault and any excluded account never count.
 
+The first window only opens once at least 15 wallets hold the token (`minHolders`). Until then trades are indexed and count toward each wallet's total, but there is no timer.
+
 All parameters are set by the operator. The live values are always in [`/api/snapshot`](/docs/api) under `info.rules`.
 
 Next: [Payouts](/docs/payouts)

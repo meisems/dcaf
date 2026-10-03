@@ -34,6 +34,7 @@ Two Cloudflare projects, both built straight from this GitHub repo. No CLI neede
 | `TOP_N` | Text | `10` |
 | `MIN_BUY` / `MIN_TOTAL` | Text | `0.1` / `1` |
 | `ROUND_MIN` / `ROUND_MAX` | Text | `10` / `15` (minutes) |
+| `MIN_HOLDERS` | Text | `15` (the first window opens once this many wallets hold the token) |
 | `VAULT_PRIVATE_KEY` | **Secret** | `ed25519:…` of the vault. **Leave unset for a dry run.** |
 | `LAVA_RPC_URL` | **Secret** | your Lava NEAR mainnet HTTPS endpoint (key inside). First choice for payouts. |
 | `DRPC_RPC_URL` | **Secret** | your dRPC NEAR HTTPS endpoint (key inside). Second choice for payouts. |
@@ -41,7 +42,7 @@ Two Cloudflare projects, both built straight from this GitHub repo. No CLI neede
 | `FASTNEAR_API_KEY` | Secret | optional, higher rate limits (sent to FastNEAR hosts only) |
 
    Saving deploys a new version. `keep_vars` in `wrangler.jsonc` keeps these on every future Git deploy.
-5. Check `https://dcaf-engine.<your-subdomain>.workers.dev/api/health`. `started: true` means it is live.
+5. Check `https://dcaf-engine.<your-subdomain>.workers.dev/api/health`. `started: true` means it is live; until the token has `MIN_HOLDERS` holders the engine indexes but no window opens.
 
 The fee split is never published: `/api/snapshot` omits `FEE_BPS` and `VAULT_BPS`.
 

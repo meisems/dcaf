@@ -14,6 +14,7 @@ export type Rules = {
   maxShare: number; // optional cap per wallet (1 = no cap)
   minPayout: number; // slices smaller than this (NEAR) roll over
   graceWindows: number;
+  minHolders: number; // the first window opens once this many wallets hold the token
   feeBps: number; // creator fee charged on every trade (300 = 3%)
   vaultBps: number; // part of the trade volume that feeds the vault (100 = 1%)
 };
@@ -29,6 +30,7 @@ export type Info = {
   vaultAccount: string;
   vaultBalance: number | null; // NEAR the payout account actually holds
   started: boolean; // first window has opened
+  holders: number; // indexed wallets holding the token
   syncing: boolean; // indexer still catching up to the chain head
   lagSec: number; // seconds behind the chain head
   dryRun: boolean; // rounds are computed but nothing is sent

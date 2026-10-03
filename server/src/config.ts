@@ -29,6 +29,7 @@ function build(e: EnvLike) {
     topN: num(e.TOP_N, DEFAULT_RULES.topN),
     maxShare: num(e.MAX_SHARE, DEFAULT_RULES.maxShare),
     minPayout: num(e.MIN_PAYOUT, DEFAULT_RULES.minPayout),
+    minHolders: num(e.MIN_HOLDERS, DEFAULT_RULES.minHolders),
     feeBps: num(e.FEE_BPS, DEFAULT_RULES.feeBps),
     vaultBps: num(e.VAULT_BPS, DEFAULT_RULES.vaultBps),
   };
