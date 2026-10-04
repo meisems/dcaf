@@ -8,7 +8,7 @@
 - Sell once, or move tokens away, and that wallet is out for good.
 - No wallet connect: buys are tracked on-chain and rewards are sent automatically.
 
-The vault is funded by trading fees.
+The vault is funded by a share of the fees the project earns.
 
 | Page | What it shows |
 |---|---|

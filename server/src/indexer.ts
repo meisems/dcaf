@@ -13,11 +13,14 @@ import { sleep, txApi } from "./near.ts";
  *   burn              move
  *
  * Ref swap logs inside the same transaction give the exact NEAR side of each trade.
+ *
+ * It also watches the fee wallet: NEAR (or wNEAR) that arrives there is fees received,
+ * and a private share of it funds the rewards pool.
  */
 
 export type Move = { kind: "buy" | "sell" | "move" | "recv"; w: string; raw: string; tx: string; receipt: string; idx: number };
 export type Swap = { nearIn: bigint; nearOut: bigint; tokIn: bigint; tokOut: bigint };
-export type ParsedBlock = { height: number; t: number; moves: Move[] };
+export type ParsedBlock = { height: number; t: number; moves: Move[]; fees?: bigint }; // fees: yoctoNEAR received by the fee wallet
 
 type Outcome = {
   block_height: number;
@@ -26,7 +29,9 @@ type Outcome = {
   id: string;
   outcome: { executor_id: string; logs: string[]; status: Record<string, unknown> };
 };
-type RawTx = { transaction: { hash: string }; execution_outcome: Outcome; receipts: { execution_outcome: Outcome }[] };
+type Action = { Transfer?: { deposit: string }; FunctionCall?: { deposit: string } };
+type Receipt = { predecessor_id: string; receiver_id: string; receipt: { Action?: { actions: (Action | string)[] } } };
+type RawTx = { transaction: { hash: string }; execution_outcome: Outcome; receipts: { execution_outcome: Outcome; receipt?: Receipt }[] };
 type AccountTx = { transaction_hash: string; tx_block_height: number };
 
 const CHUNK = 2500; // blocks per pass while catching up (~25 min of chain)
@@ -90,6 +95,36 @@ function movesOf(o: Outcome, tx: string): Move[] {
   return moves;
 }
 
+/**
+ * yoctoNEAR that one receipt delivers to the fee wallet: NEAR attached by anyone else, or wNEAR
+ * transferred to it. Gas refunds (from "system") and unwrapping its own wNEAR (from the wrap
+ * contract) are not new money, so they don't count. Failed receipts deliver nothing.
+ */
+export function feeIn(o: Outcome, r: Receipt | undefined, fee: string): bigint {
+  if ("Failure" in o.outcome.status) return 0n;
+  let y = 0n;
+  if (r && r.receiver_id === fee && r.predecessor_id !== fee && r.predecessor_id !== "system" && r.predecessor_id !== CFG.wrap) {
+    for (const a of r.receipt.Action?.actions ?? []) {
+      if (typeof a === "string") continue;
+      const d = a.Transfer?.deposit ?? a.FunctionCall?.deposit;
+      if (d) y += BigInt(d);
+    }
+  }
+  if (o.outcome.executor_id === CFG.wrap) {
+    for (const log of o.outcome.logs) {
+      if (!log.startsWith("EVENT_JSON:")) continue;
+      try {
+        const ev = JSON.parse(log.slice(11)) as { standard?: string; event?: string; data?: Record<string, string>[] };
+        if (ev.standard !== "nep141" || ev.event !== "ft_transfer" || !Array.isArray(ev.data)) continue;
+        for (const d of ev.data) if (d.new_owner_id === fee && d.old_owner_id !== fee) y += BigInt(d.amount);
+      } catch {
+        /* not an event */
+      }
+    }
+  }
+  return y;
+}
+
 export type Sink = {
   onBlock(b: ParsedBlock, swaps: Map<string, Swap>): void;
   /** the indexed chain clock moved forward (also when nothing happened) */
@@ -121,18 +156,21 @@ export async function indexPass(db: Db, sink: Sink, start: number, seen: Seen): 
     if (at.block) top = at.block;
   }
 
-  // 1. which transactions touched the token since txFrom
-  const hashes: AccountTx[] = [];
-  let resume: string | undefined;
-  do {
-    const page = await txApi<{ account_txs: AccountTx[]; resume_token?: string }>("/v0/account", {
-      account_id: CFG.token, desc: false, limit: 200,
-      from_tx_block_height: txFrom, to_tx_block_height: top.block_height,
-      ...(resume ? { resume_token: resume } : {}),
-    });
-    hashes.push(...page.account_txs);
-    resume = page.account_txs.length === 200 ? page.resume_token : undefined;
-  } while (resume);
+  // 1. which transactions touched the token or the fee wallet since txFrom
+  const byHash = new Map<string, AccountTx>();
+  for (const account of [CFG.token, CFG.feeAccount]) {
+    let resume: string | undefined;
+    do {
+      const page = await txApi<{ account_txs: AccountTx[]; resume_token?: string }>("/v0/account", {
+        account_id: account, desc: false, limit: 200,
+        from_tx_block_height: txFrom, to_tx_block_height: top.block_height,
+        ...(resume ? { resume_token: resume } : {}),
+      });
+      for (const a of page.account_txs) byHash.set(a.transaction_hash, a);
+      resume = page.account_txs.length === 200 ? page.resume_token : undefined;
+    } while (resume);
+  }
+  const hashes = [...byHash.values()];
 
   // 2. fetch full receipt trees (re-fetch in-flight ones: they may have grown)
   const need = hashes.filter((h) => !seen.has(h.transaction_hash) || inFlight(seen.get(h.transaction_hash)!, done)).map((h) => h.transaction_hash);
@@ -142,7 +180,7 @@ export async function indexPass(db: Db, sink: Sink, start: number, seen: Seen): 
   }
 
   // 3. collect receipts in (done, head], in chain order
-  const items: { o: Outcome; tx: string }[] = [];
+  const items: { o: Outcome; r?: Receipt; tx: string }[] = [];
   const swaps = new Map<string, Swap>();
   for (const h of hashes) {
     const t = seen.get(h.transaction_hash);
@@ -150,19 +188,20 @@ export async function indexPass(db: Db, sink: Sink, start: number, seen: Seen): 
     swaps.set(h.transaction_hash, swapsOf(t));
     for (const r of t.receipts) {
       const bh = r.execution_outcome.block_height;
-      if (bh > done && bh <= top.block_height) items.push({ o: r.execution_outcome, tx: h.transaction_hash });
+      if (bh > done && bh <= top.block_height) items.push({ o: r.execution_outcome, r: r.receipt, tx: h.transaction_hash });
     }
   }
   items.sort((a, b) => a.o.block_height - b.o.block_height || a.o.index - b.o.index);
 
   let cur: ParsedBlock | null = null;
-  const flush = () => cur && cur.moves.length && sink.onBlock(cur, swaps);
-  for (const { o, tx } of items) {
+  const flush = () => cur && (cur.moves.length || cur.fees) && sink.onBlock(cur, swaps);
+  for (const { o, r, tx } of items) {
     if (!cur || cur.height !== o.block_height) {
       flush();
-      cur = { height: o.block_height, t: nsToS(o.block_timestamp), moves: [] };
+      cur = { height: o.block_height, t: nsToS(o.block_timestamp), moves: [], fees: 0n };
     }
     cur.moves.push(...movesOf(o, tx));
+    cur.fees = (cur.fees ?? 0n) + feeIn(o, r, CFG.feeAccount);
   }
   flush();
 

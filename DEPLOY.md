@@ -35,7 +35,8 @@ Two Cloudflare projects, both built straight from this GitHub repo. No CLI neede
 | `MIN_BUY` / `MIN_TOTAL` | Text | `0.1` / `1` |
 | `ROUND_MIN` / `ROUND_MAX` | Text | `10` / `15` (minutes) |
 | `MIN_HOLDERS` | Text | `15` (the first window opens once this many wallets hold the token) |
-| `VAULT_BPS` | **Secret** | **required**: the part of trade volume that feeds the vault, in basis points. Not in the code and never published. |
+| `REWARD_SHARE` | **Secret** | **required**: the part of every fee claim that goes to DCAers, from `0` to `1`. Not in the code and never published. |
+| `FEE_ACCOUNT` | Text | optional: the wallet you claim fees into (defaults to `VAULT_ACCOUNT`). Every NEAR or wNEAR that arrives there counts as fees received. |
 | `VAULT_PRIVATE_KEY` | **Secret** | `ed25519:…` of the vault. **Leave unset for a dry run.** |
 | `LAVA_RPC_URL` | **Secret** | your Lava NEAR mainnet HTTPS endpoint (key inside). First choice for payouts. |
 | `DRPC_RPC_URL` | **Secret** | your dRPC NEAR HTTPS endpoint (key inside). Second choice for payouts. |
@@ -45,7 +46,11 @@ Two Cloudflare projects, both built straight from this GitHub repo. No CLI neede
    Saving deploys a new version. `keep_vars` in `wrangler.jsonc` keeps these on every future Git deploy.
 5. Check `https://dcaf.<your-subdomain>.workers.dev/api/health`. `started: true` means it is live; until the token has `MIN_HOLDERS` holders the engine indexes but no window opens.
 
-The vault share is never published: it isn't in the code, and `/api/snapshot` omits `VAULT_BPS`.
+The rewards share is never published: it isn't in the code, and `/api/snapshot` omits it.
+
+### Fees
+
+Claim fees into `FEE_ACCOUNT` (the vault by default). On each claim the engine credits `REWARD_SHARE` of it to the rewards pool. The rest stays in that wallet for the platform; when you withdraw it, leave at least the current pool (`/api/snapshot` → `info.pool`) plus the reserve, so payouts can always be sent. Gas refunds, payouts going out and unwrapping your own wNEAR are not counted as fees.
 
 ### RPC endpoints
 

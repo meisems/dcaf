@@ -10,9 +10,9 @@ type WRow = {
 };
 
 const DAY = 86400;
-// the vault share is operator configuration, not part of the public API
+// the rewards share is operator configuration, not part of the public API
 const publicRules = () => {
-  const { vaultBps: _v, ...rest } = CFG.rules;
+  const { rewardShare: _s, ...rest } = CFG.rules;
   return rest;
 };
 
