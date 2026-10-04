@@ -1,0 +1,26 @@
+// Cloudflare Pages project "dcaf" (the website). Pages reads this file on every build, and the settings below
+// (variables and bindings) show up in the dashboard as read-only: THIS FILE is where to change them.
+// The site's build reads the same "vars" (see vite.config.ts), so they reach the site either way.
+// A value written as <something> is a placeholder and counts as not set.
+{
+  "name": "dcaf",
+  "pages_build_output_dir": "dist",
+  "compatibility_date": "2026-10-03",
+  // the /api forwarder (functions/api/[[path]].ts) talks to the engine Worker directly through this binding,
+  // instead of going out to its public workers.dev address
+  "services": [{ "binding": "ENGINE", "service": "dcaf" }],
+  "vars": {
+    // the token: same values as the Worker's TOKEN_CONTRACT / TOKEN_SYMBOL (server/wrangler.jsonc)
+    "VITE_TOKEN_CONTRACT": "<your-token-contract>",
+    "VITE_TOKEN_SYMBOL": "DCA",
+    // mainnet or testnet (NEARBlocks links)
+    "VITE_NEAR_NETWORK": "mainnet",
+    // where "Buy" sends people; {token} is replaced with the contract. Placeholder = the Rhea swap page
+    "VITE_BUY_URL": "<custom-buy-link>",
+    // social links in the footer; placeholders hide them
+    "VITE_TWITTER_URL": "<x-profile-url>",
+    "VITE_TELEGRAM_URL": "<telegram-url>",
+    // the engine's address. Empty = this site: /api is forwarded to the engine Worker
+    "VITE_API_URL": ""
+  }
+}
