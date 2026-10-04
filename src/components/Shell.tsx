@@ -9,7 +9,7 @@ import { acct, isAccountId, mmss, near } from "../lib/format";
 import { setMe, useMe } from "../lib/me";
 import { toggleTheme, useCurrentPageName, useNow, useTheme } from "../lib/hooks";
 import { useToast } from "../lib/toast";
-import { Bean, Book, Coins, Copy, Cross, Home, Pulse, Search, Trophy } from "./Icons";
+import { BuyCoin, Book, Coins, Copy, Cross, Home, Pulse, Search, Trophy } from "./Icons";
 import { Clock, useWindowAnim } from "./Clock";
 import { Logo } from "./Logo";
 import { useReport } from "./WalletCard";
@@ -121,7 +121,7 @@ function Nav() {
             </AppLink>
           ) : (
             <a className="btn btn-grad btn-sm" href={LINKS.buy} target="_blank" rel="noreferrer">
-              <Bean size={16} /><span>Buy ${SYMBOL}</span>
+              <BuyCoin size={16} /><span>Buy ${SYMBOL}</span>
             </a>
           )}
         </div>
@@ -238,12 +238,12 @@ function SearchBox({ onClose }: { onClose: () => void }) {
     { key: "p:/live", label: "Live", icon: <Pulse size={17} />, run: () => go("/live") },
     { key: "p:/board", label: "Leaderboard", icon: <Trophy size={17} />, run: () => go("/board") },
     { key: "p:/rounds", label: "Rounds", icon: <Coins size={17} />, run: () => go("/rounds") },
-    { key: "p:/me", label: "My streak", icon: <Bean size={17} />, run: () => go("/me") },
+    { key: "p:/me", label: "My streak", icon: <BuyCoin size={17} />, run: () => go("/me") },
     { key: "p:/docs", label: "Docs", icon: <Book size={17} />, run: () => go("/docs") },
   ];
   const actions: Cmd[] = [
     { key: "a:theme", label: "Switch theme", icon: <ThemeIcon />, run: () => close(() => toggleTheme()) },
-    { key: "a:buy", label: `Buy $${SYMBOL}`, hint: "↗", icon: <Bean size={17} />, run: () => close(() => void window.open(LINKS.buy, "_blank", "noopener")) },
+    { key: "a:buy", label: `Buy $${SYMBOL}`, hint: "↗", icon: <BuyCoin size={17} />, run: () => close(() => void window.open(LINKS.buy, "_blank", "noopener")) },
     {
       key: "a:copy", label: "Copy token address", icon: <Copy size={17} />,
       run: () => close(() => void navigator.clipboard?.writeText(TOKEN).then(() => toast({ tone: "good", title: "Copied", body: TOKEN }))),
@@ -264,7 +264,7 @@ function SearchBox({ onClose }: { onClose: () => void }) {
     isAccountId(v) && (v.includes(".") || /^[0-9a-f]{64}$/.test(v)) && !wallets.some((w) => w.label === v)
       ? [
           { key: `w:${v}`, label: v, hint: "open", icon: <Search size={17} />, run: () => go(`/wallet/${v}`) },
-          ...(!me ? [{ key: "a:track", label: `Track ${v} as me`, icon: <Bean size={17} />, run: () => (setMe(v), go("/me")) }] : []),
+          ...(!me ? [{ key: "a:track", label: `Track ${v} as me`, icon: <BuyCoin size={17} />, run: () => (setMe(v), go("/me")) }] : []),
         ]
       : [];
   const match = (c: Cmd) => !v || c.label.toLowerCase().includes(v);
@@ -353,7 +353,7 @@ function Dock() {
     <nav className="dock" aria-label="Quick">
       <NavLink viewTransition onTouchStart={() => prefetchPath("/")} to="/" end className={cls}><Home size={20} /><span>Home</span></NavLink>
       <NavLink viewTransition onTouchStart={() => prefetchPath("/live")} to="/live" className={cls}><Pulse size={20} /><span>Live</span></NavLink>
-      <a className="dock-buy" href={LINKS.buy} target="_blank" rel="noreferrer" aria-label={`Buy ${SYMBOL}`}><Bean size={24} /></a>
+      <a className="dock-buy" href={LINKS.buy} target="_blank" rel="noreferrer" aria-label={`Buy ${SYMBOL}`}><BuyCoin size={24} /></a>
       <NavLink viewTransition onTouchStart={() => prefetchPath("/board")} to="/board" className={cls}><Trophy size={20} /><span>Board</span></NavLink>
       <NavLink viewTransition onTouchStart={() => prefetchPath("/me")} to="/me" className={cls}><Coins size={20} /><span>Me</span></NavLink>
     </nav>

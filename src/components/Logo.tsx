@@ -2,11 +2,12 @@ import { useId } from "react";
 import { BRAND } from "../config";
 
 /**
- * The dcainnear mark: a green (unroasted) coffee bean, lit with SVG lighting filters.
- * Its crease is a carved staircase: every step is one buy, and it only goes up.
+ * The dcainnear mark: a green coin, lit with SVG lighting filters, with an engraved rim.
+ * A staircase is carved across its face: every step is one buy, and it only goes up.
  */
-export const STEPS = "M23.4 41.6v-3.4h5.7v-6.7h5.7v-6.7h5.7v-3.4";
-const BEAN = { cx: 32, cy: 31, rx: 17.2, ry: 23.6, transform: "rotate(32 32 31)" };
+export const STEPS = "M20.5 41H26V35H32V29H38V23H43.5";
+const COIN = { cx: 32, cy: 31, r: 23 };
+const RIM = 19;
 
 export function Mark({ size = 36, shadow = false, live = false, title }: { size?: number; shadow?: boolean; live?: boolean; title?: string }) {
   const u = useId().replace(/:/g, "");
@@ -28,6 +29,7 @@ export function Mark({ size = 36, shadow = false, live = false, title }: { size?
         <mask id={id("cut")} maskUnits="userSpaceOnUse">
           <rect width="64" height="64" fill="#fff" />
           <path d={STEPS} fill="none" stroke="#000" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round" />
+          <circle cx={COIN.cx} cy={COIN.cy} r={RIM} fill="none" stroke="#000" strokeWidth="1.3" />
         </mask>
         <filter id={id("lit")} x="-20%" y="-20%" width="140%" height="140%" colorInterpolationFilters="sRGB">
           <feGaussianBlur in="SourceAlpha" stdDeviation="5" result="dome" />
@@ -49,15 +51,15 @@ export function Mark({ size = 36, shadow = false, live = false, title }: { size?
         </filter>
         <filter id={id("sh")} x="-50%" y="-80%" width="200%" height="260%"><feGaussianBlur stdDeviation="2.4" /></filter>
         <filter id={id("ao")} x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="1.1" /></filter>
-        <clipPath id={id("clip")}><ellipse {...BEAN} /></clipPath>
+        <clipPath id={id("clip")}><circle {...COIN} /></clipPath>
       </defs>
-      {shadow && <ellipse cx="34.5" cy="57.5" rx="16" ry="3.2" fill="#000" opacity=".6" filter={`url(#${id("sh")})`} />}
-      <ellipse {...BEAN} fill={`url(#${id("deep")})`} />
+      {shadow && <ellipse cx="32" cy="57.5" rx="16" ry="3.2" fill="#000" opacity=".6" filter={`url(#${id("sh")})`} />}
+      <circle {...COIN} fill={`url(#${id("deep")})`} />
       <g filter={`url(#${id("lit")})`}>
-        <g mask={`url(#${id("cut")})`}><ellipse {...BEAN} fill={`url(#${id("skin")})`} /></g>
+        <g mask={`url(#${id("cut")})`}><circle {...COIN} fill={`url(#${id("skin")})`} /></g>
       </g>
       <g clipPath={`url(#${id("clip")})`}>
-        <ellipse {...BEAN} fill="none" stroke="#001A10" strokeOpacity=".55" strokeWidth="3" filter={`url(#${id("ao")})`} />
+        <circle {...COIN} fill="none" stroke="#001A10" strokeOpacity=".55" strokeWidth="3" filter={`url(#${id("ao")})`} />
       </g>
     </svg>
     {live && (

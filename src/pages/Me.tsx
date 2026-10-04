@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useParams } from "react-router";
 import { BRAND, LINKS } from "../config";
-import { Bean, Bell, Check, Copy, Search } from "../components/Icons";
+import { BuyCoin, Bell, Check, Copy, Search } from "../components/Icons";
 import { Mark } from "../components/Logo";
 import { useReport, WalletCard } from "../components/WalletCard";
 import { Ago, AppLink, Avatar, Card, Empty, PageHead } from "../components/ui";
@@ -106,7 +106,7 @@ function WalletView({ id, mine }: { id: string; mine: boolean }) {
         </Card>
       )}
       {!rep.known && mine && (
-        <p className="center"><a className="btn btn-grad" href={LINKS.buy} target="_blank" rel="noreferrer"><Bean size={16} /> First buy</a></p>
+        <p className="center"><a className="btn btn-grad" href={LINKS.buy} target="_blank" rel="noreferrer"><BuyCoin size={16} /> First buy</a></p>
       )}
       {!mine && <p className="center"><AppLink to="/board" className="more-link">Leaderboard →</AppLink></p>}
     </>
