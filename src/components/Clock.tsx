@@ -1,18 +1,16 @@
 import { memo, useMemo } from "react";
 import { useNow } from "../lib/hooks";
 
-/** One digit as a rolling strip 0–9: changes slide instead of snapping. */
+/** One digit. A new value drops in from above, so 0 → 9 is one step like any other (no wrap-around scroll). */
 const Digit = memo(function Digit({ d }: { d: number }) {
   return (
     <span className="dg" aria-hidden>
-      <span className="dg-strip" style={{ transform: `translateY(${-d * 10}%)` }}>
-        {Array.from({ length: 10 }, (_, i) => <span key={i}>{i}</span>)}
-      </span>
+      <span key={d} className="dg-n">{d}</span>
     </span>
   );
 });
 
-/** mm:ss with rolling digits and unit labels. Below 60s it turns hot, at 0 it shows the payout state. */
+/** mm:ss with easing digits and unit labels. Below 60s it turns hot, at 0 it shows the payout state. */
 export function Clock({ left, size = "lg", idle = false }: { left: number; size?: "lg" | "sm"; idle?: boolean }) {
   const s = Math.max(0, Math.floor(left));
   const m = Math.min(99, Math.floor(s / 60));

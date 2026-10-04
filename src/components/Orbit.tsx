@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState } from "react";
+import { LINKS, SYMBOL } from "../config";
 import { paidCount, type Snapshot } from "../lib/api";
-import { acct, near } from "../lib/format";
-import { Countdown, useWindowAnim } from "./Clock";
+import { acct, clock, near } from "../lib/format";
+import { useNow } from "../lib/hooks";
+import { Clock, useWindowAnim } from "./Clock";
+import { ArrowRight } from "./Icons";
 import { Mark } from "./Logo";
-import { Avatar, Num } from "./ui";
+import { Avatar, Num, useUi } from "./ui";
 
 const TICKS = 60;
 
@@ -78,6 +81,11 @@ export function Orbit({ snap }: { snap: Snapshot }) {
           </defs>
           <circle cx="170" cy="170" r="128" fill="url(#core)" />
           <circle cx="170" cy="170" r="150" className="orbit-ring" />
+          {/* before the first round: the ring fills with holders instead of time */}
+          {!info.started && (
+            <circle cx="170" cy="170" r="150" pathLength={1} className="orbit-arc holders" stroke="url(#arc)" transform="rotate(-90 170 170)"
+              strokeDasharray={`${Math.min(1, info.holders / Math.max(1, info.rules.minHolders))} 1`} />
+          )}
           {/* 60 radial ticks = one thick dashed circle; the lit copy is revealed by the running mask */}
           <g transform="rotate(-90 170 170)">
             <circle cx="170" cy="170" r="164" pathLength={TICKS} className="ticks" />
@@ -106,8 +114,8 @@ export function Orbit({ snap }: { snap: Snapshot }) {
         </div>
 
         <div className="orbit-core">
-          <div className="orbit-bean"><Mark size={104} shadow live /></div>
-          <Countdown at={info.nextRoundAt} idle={!open} />
+          <div className="orbit-bean"><Mark size={84} shadow live /></div>
+          <Core snap={snap} open={open} />
         </div>
 
         <div className="orbit-tags">
@@ -122,6 +130,39 @@ export function Orbit({ snap }: { snap: Snapshot }) {
         <div><small>DCAing</small><b>{info.dcaingNow}</b></div>
         <div><small>Holders</small><b>{info.holders}</b></div>
       </div>
+    </div>
+  );
+}
+
+/** The middle of the orbit: what is counting down, until when, and where you stand. */
+function Core({ snap, open }: { snap: Snapshot; open: boolean }) {
+  const { info } = snap;
+  const now = useNow();
+  const { mine } = useUi();
+  const R = info.rules;
+  if (!info.started)
+    return (
+      <div className="core">
+        <span className="core-label">Waiting for holders</span>
+        <span className="core-big">{info.holders}<small>/{R.minHolders}</small></span>
+        <span className="core-sub">The first round starts at {R.minHolders} holders</span>
+      </div>
+    );
+  const left = open ? Math.max(0, info.nextRoundAt - now) : 0;
+  const last = left > 0 && left <= 60;
+  const inRound = mine?.status === "dcaing";
+  return (
+    <div className={`core${last ? " last" : ""}`}>
+      <span className="core-label">{left === 0 ? `Round #${info.windowNo} closing` : last ? "Last call" : `Round #${info.windowNo} closes in`}</span>
+      <Clock left={left} />
+      {left > 0 && <span className="core-sub">at {clock(info.nextRoundAt)}</span>}
+      {inRound ? (
+        <span className="core-chip in">✓ You're in this round</span>
+      ) : last ? (
+        <a className="core-buy" href={LINKS.buy} target="_blank" rel="noreferrer">Buy ${SYMBOL} now <ArrowRight size={14} /></a>
+      ) : mine && mine.status !== "out" ? (
+        <span className="core-chip">Buy ≥ {R.minBuy} NEAR to join</span>
+      ) : null}
     </div>
   );
 }

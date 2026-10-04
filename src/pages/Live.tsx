@@ -40,9 +40,19 @@ export default function Live() {
       <PageHead kicker="Live" title="Who's DCAing">
         <div className="window-pill">
           <span className="live-dot" />
-          <span>{i.started ? `#${i.windowNo}` : "soon"}</span>
-          <Countdown at={i.nextRoundAt} size="sm" idle={!i.started} />
-          <div className="wbar" style={anim.style}>{i.started && <i key={anim.key} className="run-bar" />}</div>
+          {i.started ? (
+            <>
+              <span>#{i.windowNo}</span>
+              <Countdown at={i.nextRoundAt} size="sm" />
+              <div className="wbar" style={anim.style}><i key={anim.key} className="run-bar" /></div>
+            </>
+          ) : (
+            <>
+              <span>Waiting</span>
+              <span className="nt-hold"><b>{i.holders}</b>/{i.rules.minHolders} holders</span>
+              <div className="wbar"><i style={{ width: `${Math.min(100, (i.holders / Math.max(1, i.rules.minHolders)) * 100)}%` }} /></div>
+            </>
+          )}
         </div>
       </PageHead>
 
