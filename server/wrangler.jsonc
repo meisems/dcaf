@@ -1,6 +1,12 @@
 // Cloudflare Worker for the dcainnear engine. Deployed by Workers Builds from GitHub (no CLI needed):
 // Workers & Pages → Create → Import a repository → root directory "server".
-// Variables and secrets live in the dashboard (Settings → Variables and Secrets); keep_vars keeps them on redeploy.
+//
+// "vars" below are the engine's Text settings. Every deploy writes them to the Worker, so they show up in
+// the dashboard (Settings → Variables and Secrets) and THIS FILE is where to change them: an edit made in the
+// dashboard is replaced on the next deploy. A value written as <something> is a placeholder and counts as
+// not set (until TOKEN_CONTRACT is real the engine runs in test mode).
+// Secrets (REWARD_SHARE, VAULT_PRIVATE_KEY, the RPC URLs, FASTNEAR_API_KEY) never go here: add them in the
+// dashboard as Secrets. keep_vars keeps them, and anything else set there, on every deploy.
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "dcaf",
@@ -8,6 +14,30 @@
   "compatibility_date": "2026-06-01",
   "compatibility_flags": ["nodejs_compat"],
   "keep_vars": true,
+  "vars": {
+    // token
+    "TOKEN_CONTRACT": "<your-token-contract>",
+    "TOKEN_SYMBOL": "DCA",
+    "START_BLOCK": "<launch-block-height>",
+    "REF_POOL_ID": "<rhea-dca-wnear-pool-id>",
+    // vault and rewards
+    "VAULT_ACCOUNT": "<your-vault-account>",
+    "FEE_ACCOUNT": "<fee-claim-wallet>",
+    "EXCLUDE_ACCOUNTS": "<team-and-treasury-wallets>",
+    "VAULT_RESERVE_NEAR": "0.5",
+    "DRY_RUN": "false",
+    "TX_PUBLIC_FALLBACK": "true",
+    // rules
+    "MIN_HOLDERS": "15",
+    "ROUND_MIN": "10",
+    "ROUND_MAX": "15",
+    "MIN_BUY": "0.1",
+    "MIN_TOTAL": "1",
+    "TOP_N": "0",
+    "EQUAL_SHARE": "0.5",
+    "MAX_SHARE": "0.25",
+    "MIN_PAYOUT": "0.001"
+  },
   "durable_objects": {
     "bindings": [{ "name": "ENGINE", "class_name": "EngineDO" }]
   },

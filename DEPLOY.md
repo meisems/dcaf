@@ -22,6 +22,8 @@ Two Cloudflare projects, both built straight from this GitHub repo. No CLI neede
 3. **Deploy.** The Durable Object, its SQLite storage and the 1-minute cron are created from `server/wrangler.jsonc`.
 4. **dcaf (Worker) → Settings → Variables and Secrets → Add**:
 
+   **Text settings are added for you:** they're declared under `vars` in [`server/wrangler.jsonc`](server/wrangler.jsonc), and every deploy writes them to the Worker, so they appear in the dashboard by themselves. Change them in that file and push; an edit made in the dashboard is replaced on the next deploy. Only **Secrets** are added by hand in the dashboard. The website's Text settings work the same way in [`.env.production`](.env.production), except that a value set in the Pages dashboard wins over the file.
+
    The full list, with where to get each value, is in [`server/.env.example`](server/.env.example) (the website's is in [`.env.example`](.env.example)). A value written as `<something>` is a placeholder and counts as not set, so you can add everything now and fill in real values later.
 
 | Name | Type | Example |

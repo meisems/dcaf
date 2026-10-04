@@ -39,8 +39,6 @@ export class Reader {
       earners: d.prepare(`SELECT ${cols}, b.q AS wb FROM wallets w LEFT JOIN window_buys b ON b.w = w.id AND b.no = ?
         WHERE w.earned > 0 ORDER BY w.earned DESC LIMIT 100`),
       one: d.prepare(`SELECT ${cols}, b.q AS wb FROM wallets w LEFT JOIN window_buys b ON b.w = w.id AND b.no = ? WHERE w.id = ?`),
-      atRisk: d.prepare(`SELECT COUNT(*) AS n FROM wallets w LEFT JOIN window_buys b ON b.w = w.id AND b.no = ?
-        WHERE w.streak > 0 AND w.sold = 0 AND w.moved = 0 AND COALESCE(b.q, 0) < ?`),
       buyers: d.prepare("SELECT COUNT(*) AS n FROM wallets WHERE first_at IS NOT NULL"),
       trades: d.prepare("SELECT t, w, side, q, p, tx FROM trades WHERE t >= ? ORDER BY id DESC LIMIT 4000"),
       tradesFor: d.prepare("SELECT t, w, side, q, p, tx FROM trades WHERE w = ? ORDER BY id DESC LIMIT 50"),
@@ -87,7 +85,6 @@ export class Reader {
       accrued: m.num("accrued"),
       goldenStack: m.num("goldenStack"),
       dcaingNow: live.length,
-      atRisk: w ? (this.q.atRisk.get(no, R.minBuy) as { n: number }).n : 0,
       topStreak: streakers.reduce((mx, r) => Math.max(mx, liveStreak(r)), 0),
       roundsRun: (this.q.roundCount.get() as { n: number }).n,
       totalPaid: m.num("totalPaid"),
