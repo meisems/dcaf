@@ -100,10 +100,13 @@ export class Reader {
   private estimates(rows: WRow[], pool: number) {
     const R = CFG.rules;
     const quals = rows.filter((r) => statusOf(facts(r), R) === "dcaing");
-    const alloc = allocate(quals.map((r) => weight(r.streak + 1, r.wb ?? 0, R)), pool, R);
+    const weights = quals.map((r) => weight(r.streak + 1, r.wb ?? 0, R));
+    const alloc = allocate(weights, pool, R);
+    // each wallet's part of the pool, from the split itself, so it means something even while the pool is empty
+    const shares = allocate(weights, 1, { ...R, minPayout: 0 });
     const m = new Map<string, { est: number; share: number; rank: number }>();
-    const order = quals.map((r, i) => ({ id: r.id, est: alloc[i], w: weight(r.streak + 1, r.wb ?? 0, R) })).sort((a, b) => b.w - a.w);
-    order.forEach((x, i) => m.set(x.id, { est: x.est, share: pool ? x.est / pool : 0, rank: i + 1 }));
+    const order = quals.map((r, i) => ({ id: r.id, est: alloc[i], share: shares[i], w: weights[i] })).sort((a, b) => b.w - a.w);
+    order.forEach((x, i) => m.set(x.id, { est: x.est, share: x.share, rank: i + 1 }));
     return m;
   }
 

@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { PriceChart } from "../components/PriceChart";
 import { Ago, AppLink, Avatar, Card, Empty, PageHead, StatusPill, Streak } from "../components/ui";
 import { useLive, type Status, paidCount } from "../lib/api";
-import { acct, near } from "../lib/format";
+import { acct, near, payout } from "../lib/format";
 import { Countdown, useWindowAnim } from "../components/Clock";
 import { usePageName } from "../lib/hooks";
 
@@ -62,7 +62,7 @@ export default function Live() {
             dcaers.length ? (
               <div className="table-scroll">
                 <table className="tbl">
-                  <thead><tr><th>#</th><th>Wallet</th><th>Streak</th><th className="r">This window</th><th className="r">Est.</th></tr></thead>
+                  <thead><tr><th>#</th><th>Wallet</th><th>Streak</th><th className="r">This window</th><th className="r">{i.pool > 0 ? "Est." : "Share"}</th></tr></thead>
                   <tbody>
                     {dcaers.map((r, k) => (
                       <tr key={r.id} className={k < paidCount(i.rules) ? "paid" : "dim"}>
@@ -70,7 +70,7 @@ export default function Live() {
                         <td><AppLink to={`/wallet/${r.id}`} className="who"><Avatar id={r.id} size={22} /><span className="mono">{acct(r.id, 20)}</span></AppLink></td>
                         <td><Streak n={r.liveStreak} /></td>
                         <td className="r">{near(r.windowBuy)}</td>
-                        <td className="r"><b>{near(r.est)}</b></td>
+                        <td className="r"><b>{payout(r.est, r.share, i.pool)}</b></td>
                       </tr>
                     ))}
                   </tbody>

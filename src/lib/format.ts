@@ -70,5 +70,8 @@ export const dateTime = (ts: number) =>
 
 export const pct = (f: number, d = 1) => (f * 100).toFixed(d) + "%";
 
+/** What a wallet would get this round: NEAR once the pool has some, its share of the pool until then. */
+export const payout = (est: number, share: number, pool: number) => (pool > 0 ? near(est) : pct(share));
+
 export const isAccountId = (s: string) =>
   /^(([a-z\d]+[-_])*[a-z\d]+\.)*([a-z\d]+[-_])*[a-z\d]+$/.test(s) && s.length >= 2 && s.length <= 64;
