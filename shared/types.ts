@@ -16,12 +16,11 @@ export type Rules = {
   minPayout: number; // slices smaller than this (NEAR) roll over
   graceWindows: number;
   minHolders: number; // the first window opens once this many wallets hold the token
-  feeBps: number; // creator fee charged on every trade (300 = 3%)
-  vaultBps: number; // part of the trade volume that feeds the vault (100 = 1%)
+  vaultBps: number; // part of the trade volume that feeds the vault, in basis points (set by the operator)
 };
 
-/** What the API publishes: the game rules, without the fee configuration. */
-export type PublicRules = Omit<Rules, "feeBps" | "vaultBps">;
+/** What the API publishes: the game rules, without the vault share. */
+export type PublicRules = Omit<Rules, "vaultBps">;
 
 export type Status = "dcaing" | "waiting" | "notyet" | "idle" | "out";
 

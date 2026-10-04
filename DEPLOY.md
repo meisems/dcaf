@@ -29,13 +29,13 @@ Two Cloudflare projects, both built straight from this GitHub repo. No CLI neede
 | `VAULT_ACCOUNT` | Text | `vault.dcainnear.near` |
 | `START_BLOCK` | Text | launch block height |
 | `REF_POOL_ID` | Text | TOKEN/wNEAR pool id on Rhea |
-| `FEE_BPS` / `VAULT_BPS` | Text | optional: the fee and the part of it that feeds the vault, in basis points (defaults in `shared/rules.ts`) |
 | `TOP_N` | Text | `0` (everyone who qualifies is paid; a number pays only the top N) |
 | `EQUAL_SHARE` | Text | `0.5` (part of each round split equally; the rest goes by weight) |
 | `MAX_SHARE` | Text | `0.25` (most of a round one wallet can take) |
 | `MIN_BUY` / `MIN_TOTAL` | Text | `0.1` / `1` |
 | `ROUND_MIN` / `ROUND_MAX` | Text | `10` / `15` (minutes) |
 | `MIN_HOLDERS` | Text | `15` (the first window opens once this many wallets hold the token) |
+| `VAULT_BPS` | **Secret** | **required**: the part of trade volume that feeds the vault, in basis points. Not in the code and never published. |
 | `VAULT_PRIVATE_KEY` | **Secret** | `ed25519:…` of the vault. **Leave unset for a dry run.** |
 | `LAVA_RPC_URL` | **Secret** | your Lava NEAR mainnet HTTPS endpoint (key inside). First choice for payouts. |
 | `DRPC_RPC_URL` | **Secret** | your dRPC NEAR HTTPS endpoint (key inside). Second choice for payouts. |
@@ -45,7 +45,7 @@ Two Cloudflare projects, both built straight from this GitHub repo. No CLI neede
    Saving deploys a new version. `keep_vars` in `wrangler.jsonc` keeps these on every future Git deploy.
 5. Check `https://dcaf.<your-subdomain>.workers.dev/api/health`. `started: true` means it is live; until the token has `MIN_HOLDERS` holders the engine indexes but no window opens.
 
-The fee split is never published: `/api/snapshot` omits `FEE_BPS` and `VAULT_BPS`.
+The vault share is never published: it isn't in the code, and `/api/snapshot` omits `VAULT_BPS`.
 
 ### RPC endpoints
 
