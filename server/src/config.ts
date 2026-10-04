@@ -69,7 +69,7 @@ function build(raw: EnvLike) {
     txApi: e.TX_API_URL || (main ? "https://tx.main.fastnear.com" : "https://tx.test.fastnear.com"),
     apiKey: e.FASTNEAR_API_KEY || "",
     token,
-    symbol: e.TOKEN_SYMBOL || (test ? TEST.symbol : "DCA"),
+    symbol: test ? TEST.symbol : e.TOKEN_SYMBOL || "DCA",
     wrap: e.WRAP_CONTRACT || (main ? "wrap.near" : "wrap.testnet"),
     dexes: new Set(dexes),
     ref: e.REF_CONTRACT || dexes[0],

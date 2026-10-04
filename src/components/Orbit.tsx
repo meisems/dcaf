@@ -120,7 +120,7 @@ export function Orbit({ snap }: { snap: Snapshot }) {
       <div className="orbit-stats">
         <div><small>Vault</small><Num v={info.pool} fmt={(n) => near(n)} /></div>
         <div><small>DCAing</small><b>{info.dcaingNow}</b></div>
-        <div><small>At risk</small><b>{info.atRisk}</b></div>
+        <div><small>Holders</small><b>{info.holders}</b></div>
       </div>
     </div>
   );

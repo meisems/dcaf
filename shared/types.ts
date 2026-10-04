@@ -45,7 +45,6 @@ export type Info = {
   accrued: number; // all rewards ever credited to the pool
   goldenStack: number; // closes in a row with nobody qualifying
   dcaingNow: number;
-  atRisk: number;
   topStreak: number;
   roundsRun: number;
   totalPaid: number;
