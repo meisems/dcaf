@@ -3,15 +3,15 @@
 const env = import.meta.env;
 
 export const BRAND = {
-  name: "dcaf",
+  name: "dcainnear",
   tagline: "DCA. No jitters.",
   twitter: env.VITE_TWITTER_URL || "",
   telegram: env.VITE_TELEGRAM_URL || "",
 };
 
 export const NETWORK: "mainnet" | "testnet" = env.VITE_NEAR_NETWORK === "testnet" ? "testnet" : "mainnet";
-export const TOKEN: string = env.VITE_TOKEN_CONTRACT || "dcaf.tkn.near";
-export const SYMBOL: string = env.VITE_TOKEN_SYMBOL || "DCAF";
+export const TOKEN: string = env.VITE_TOKEN_CONTRACT || "dcainnear.tkn.near";
+export const SYMBOL: string = env.VITE_TOKEN_SYMBOL || "DCA";
 
 /** Same origin by default: the engine serves the app and the API together. */
 export const API_URL: string = (env.VITE_API_URL || "").replace(/\/$/, "");

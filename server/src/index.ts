@@ -20,7 +20,7 @@ const engine = new Engine(db);
 const reader = new Reader(db, engine);
 let stopping = false;
 
-console.log(`dcaf engine (local) · ${CFG.network} · token ${CFG.token} · vault ${CFG.vaultAccount}${CFG.dryRun ? " · DRY RUN" : ""}`);
+console.log(`dcainnear engine (local) · ${CFG.network} · token ${CFG.token} · vault ${CFG.vaultAccount}${CFG.dryRun ? " · DRY RUN" : ""}`);
 
 await loadToken(engine, db);
 void refreshMarket(engine);

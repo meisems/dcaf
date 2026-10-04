@@ -123,7 +123,7 @@ export default {
     const url = new URL(req.url);
     if (req.method === "OPTIONS")
       return new Response(null, { status: 204, headers: { "access-control-allow-origin": "*", "access-control-allow-headers": "content-type, if-none-match" } });
-    if (!url.pathname.startsWith("/api/")) return new Response("dcaf engine · see /api/health", { headers: { "content-type": "text/plain" } });
+    if (!url.pathname.startsWith("/api/")) return new Response("dcainnear engine · see /api/health", { headers: { "content-type": "text/plain" } });
     if (req.method !== "GET" && req.method !== "HEAD") return new Response("method not allowed", { status: 405 });
 
     // edge cache in front of the Durable Object: at most one engine hit per URL per second

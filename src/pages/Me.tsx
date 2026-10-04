@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams } from "react-router";
-import { LINKS } from "../config";
+import { BRAND, LINKS } from "../config";
 import { Bean, Bell, Check, Copy, Search } from "../components/Icons";
 import { Mark } from "../components/Logo";
 import { useReport, WalletCard } from "../components/WalletCard";
@@ -67,7 +67,7 @@ function WalletView({ id, mine }: { id: string; mine: boolean }) {
   const share = async () => {
     const url = `${location.origin}/wallet/${id}`;
     const nav = navigator as Navigator & { share?: (d: { title: string; url: string }) => Promise<void> };
-    if (nav.share) return nav.share({ title: `${acct(id, 24)} on dcaf`, url }).catch(() => {});
+    if (nav.share) return nav.share({ title: `${acct(id, 24)} on ${BRAND.name}`, url }).catch(() => {});
     await navigator.clipboard?.writeText(url);
     toast({ tone: "good", title: "Link copied" });
   };

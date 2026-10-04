@@ -1,4 +1,4 @@
-# dcaf — DCA. No jitters.
+# dcainnear — DCA. No jitters.
 
 A NEAR DCA tracker and rewards engine, in the spirit of dca.community.
 

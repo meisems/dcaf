@@ -9,7 +9,7 @@ import type { Rules } from "../../shared/types.ts";
 export type EnvLike = Record<string, string | undefined>;
 
 /** Stand-ins used until the real token is configured: an active token, a vault that never pays. */
-const TEST = { token: "token.v2.ref-finance.near", symbol: "REF", vault: "dcaf-test-vault.near", pool: 79 };
+const TEST = { token: "token.v2.ref-finance.near", symbol: "REF", vault: "dcainnear-test-vault.near", pool: 79 };
 
 const list = (v: string | undefined) => (v ?? "").split(",").map((s) => s.trim()).filter(Boolean);
 const num = (v: string | undefined, d: number) => (v !== undefined && v !== "" && Number.isFinite(+v) ? +v : d);
@@ -58,7 +58,7 @@ function build(e: EnvLike) {
     txApi: e.TX_API_URL || (main ? "https://tx.main.fastnear.com" : "https://tx.test.fastnear.com"),
     apiKey: e.FASTNEAR_API_KEY || "",
     token,
-    symbol: e.TOKEN_SYMBOL || (test ? TEST.symbol : "DCAF"),
+    symbol: e.TOKEN_SYMBOL || (test ? TEST.symbol : "DCA"),
     wrap: e.WRAP_CONTRACT || (main ? "wrap.near" : "wrap.testnet"),
     dexes: new Set(dexes),
     ref: e.REF_CONTRACT || dexes[0],

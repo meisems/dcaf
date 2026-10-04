@@ -1,4 +1,4 @@
-// dcaf service worker: an offline-capable shell, hashed assets and fonts cached forever.
+// dcainnear service worker: an offline-capable shell, hashed assets and fonts cached forever.
 // The live API is never cached here; the app has its own snapshot cache for that.
 const SHELL = "dcaf-shell-v1";
 const ASSETS = "dcaf-assets-v1";

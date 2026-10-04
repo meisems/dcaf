@@ -1,4 +1,4 @@
-// Cloudflare Worker for the dcaf engine. Deployed by Workers Builds from GitHub (no CLI needed):
+// Cloudflare Worker for the dcainnear engine. Deployed by Workers Builds from GitHub (no CLI needed):
 // Workers & Pages → Create → Import a repository → root directory "server".
 // Variables and secrets live in the dashboard (Settings → Variables and Secrets); keep_vars keeps them on redeploy.
 {
