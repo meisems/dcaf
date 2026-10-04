@@ -207,3 +207,18 @@ test("old plain-text token logs are read, and refunds net out the transfer they 
   assert.equal(m[0].raw, "70", "only the part that was really sold");
   assert.equal(movesOf(out([`Transfer 100 from ${DEX} to dan.near`]), "t3")[0].kind, "buy");
 });
+
+test("the Streaks board only lists wallets that bought this window", () => {
+  const r = rig();
+  r.block([{ kind: "recv", w: "a.near", tokens: 1 }, { kind: "recv", w: "b.near", tokens: 1 }, { kind: "recv", w: "c.near", tokens: 1 }]);
+  r.start();
+  r.block([{ kind: "buy", w: "alice.near", near: 1.5 }, { kind: "buy", w: "bob.near", near: 1.5 }]);
+  let s = r.reader.snapshot();
+  assert.deepEqual(s.board.streaks.map((x) => x.id).sort(), ["alice.near", "bob.near"]);
+  r.tick(600); // window 1 closes: both qualified, streak 1
+  r.block([{ kind: "buy", w: "alice.near", near: 0.2 }, { kind: "buy", w: "dan.near", near: 0.05 }]);
+  s = new Reader(r.db, r.engine).snapshot(); // a fresh reader: snapshots are cached for a second
+  assert.deepEqual(s.board.streaks.map((x) => x.id), ["alice.near"], "bob held but didn't buy; dan bought under the minimum");
+  assert.deepEqual(s.board.next.map((x) => x.id), ["alice.near"]);
+  assert.equal(s.info.topStreak, 2, "top streak still counts every live streak");
+});

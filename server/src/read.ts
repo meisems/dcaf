@@ -30,7 +30,11 @@ export class Reader {
     const cols = "w.id, w.first_at, w.last_buy_at, w.total, w.tokens, w.sold, w.moved, w.streak, w.best, w.earned";
     this.q = {
       inWindow: d.prepare(`SELECT ${cols}, b.q AS wb FROM window_buys b JOIN wallets w ON w.id = b.w WHERE b.no = ?`),
-      streaks: d.prepare(`SELECT ${cols}, b.q AS wb FROM wallets w LEFT JOIN window_buys b ON b.w = w.id AND b.no = ?
+      // the Streaks board: only wallets that bought (at least the minimum) in this window, longest streak first
+      streaks: d.prepare(`SELECT ${cols}, b.q AS wb FROM window_buys b JOIN wallets w ON w.id = b.w
+        WHERE b.no = ? AND b.q >= ? AND w.sold = 0 AND w.moved = 0 ORDER BY w.streak DESC, w.total DESC LIMIT 200`),
+      // every live streak, bought this window or not: for the "top streak" stat
+      streakers: d.prepare(`SELECT ${cols}, b.q AS wb FROM wallets w LEFT JOIN window_buys b ON b.w = w.id AND b.no = ?
         WHERE w.sold = 0 AND w.moved = 0 AND (w.streak > 0 OR b.q IS NOT NULL) ORDER BY w.streak DESC, w.total DESC LIMIT 200`),
       earners: d.prepare(`SELECT ${cols}, b.q AS wb FROM wallets w LEFT JOIN window_buys b ON b.w = w.id AND b.no = ?
         WHERE w.earned > 0 ORDER BY w.earned DESC LIMIT 100`),
@@ -61,7 +65,7 @@ export class Reader {
     const R = CFG.rules;
     const inWin = w ? (this.q.inWindow.all(no) as WRow[]) : [];
     const live = inWin.filter((r) => statusOf(facts(r), R) === "dcaing");
-    const streaks = w ? (this.q.streaks.all(no) as WRow[]) : [];
+    const streakers = w ? (this.q.streakers.all(no) as WRow[]) : [];
     const p24 = (this.q.first24.get(now - DAY) as { p: number } | undefined)?.p ?? null;
     const price = e.price ?? (this.q.lastP.get() as { p: number } | undefined)?.p ?? null;
     return {
@@ -84,7 +88,7 @@ export class Reader {
       goldenStack: m.num("goldenStack"),
       dcaingNow: live.length,
       atRisk: w ? (this.q.atRisk.get(no, R.minBuy) as { n: number }).n : 0,
-      topStreak: streaks.reduce((mx, r) => Math.max(mx, liveStreak(r)), 0),
+      topStreak: streakers.reduce((mx, r) => Math.max(mx, liveStreak(r)), 0),
       roundsRun: (this.q.roundCount.get() as { n: number }).n,
       totalPaid: m.num("totalPaid"),
       ...this.payoutCounts(),
@@ -127,7 +131,7 @@ export class Reader {
       };
     };
     const next = inWin.map(row).filter((r) => r.status === "dcaing").sort((a, b) => b.est - a.est || b.liveStreak - a.liveStreak);
-    const streaks = no ? (this.q.streaks.all(no) as WRow[]).map(row).slice(0, 100) : [];
+    const streaks = no ? (this.q.streaks.all(no, CFG.rules.minBuy) as WRow[]).map(row).slice(0, 100) : [];
     const allTime = (this.q.earners.all(no) as WRow[]).map(row);
     const trades = (this.q.trades.all(now - DAY) as Trade[]).reverse();
     const snap: Snapshot = { info, trades, board: { next, streaks, allTime }, rounds: this.rounds(60) };
