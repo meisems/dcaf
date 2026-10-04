@@ -1,4 +1,4 @@
-import { allocate, vaultCut, weight } from "../../shared/rules.ts";
+import { allocate, weight } from "../../shared/rules.ts";
 import { CFG } from "./config.ts";
 import type { Db } from "./db.ts";
 import type { Move, ParsedBlock, Swap } from "./indexer.ts";
@@ -10,6 +10,7 @@ type Win = { no: number; start: number; close_at: number };
  * The state machine. Every finalized block goes through `onBlock` in order:
  *   1. close any window whose time has passed (by block time, never wall time)
  *   2. apply the block's buys / sells / moves
+ *   3. credit the rewards share of any fees the fee wallet received
  * so the result is the same whether the engine runs live or replays history.
  */
 export class Engine {
@@ -78,7 +79,7 @@ export class Engine {
     return (this.q.win.get() as Win | undefined) ?? null;
   }
 
-  /** NEAR the next close can split: accrued vault fees not yet committed, and never more than the vault holds. */
+  /** NEAR the next close can split: the rewards share of fees received, not yet committed, and never more than the vault holds. */
   pool(): number {
     const m = this.db.meta;
     let p = Math.max(0, m.num("accrued") - m.num("committed"));
@@ -96,6 +97,7 @@ export class Engine {
       this.lastHeight = b.height;
       this.advanceTo(b.t);
       for (const m of b.moves) this.apply(m, b, swaps.get(m.tx));
+      if (b.fees && this.started) this.accrue(yoctoToNear(b.fees));
       this.db.meta.set("done", b.height);
     });
   }
@@ -180,9 +182,11 @@ export class Engine {
     return { q: this.price ? tokens * this.price : 0, exact: false };
   }
 
-  private accrue(q: number) {
+  /** Fees received: the rewards share goes to the pool, the rest stays with the platform. */
+  private accrue(received: number) {
     const m = this.db.meta;
-    m.set("accrued", m.num("accrued") + vaultCut(q, CFG.rules));
+    m.set("feesIn", m.num("feesIn") + received);
+    m.set("accrued", m.num("accrued") + received * CFG.rules.rewardShare);
   }
 
   private apply(m: Move, b: ParsedBlock, swap: Swap | undefined) {
@@ -208,7 +212,6 @@ export class Engine {
     } else {
       this.q.sell.run(tokens, b.t, m.w);
     }
-    if (this.started) this.accrue(q);
   }
 }
 

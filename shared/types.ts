@@ -16,11 +16,11 @@ export type Rules = {
   minPayout: number; // slices smaller than this (NEAR) roll over
   graceWindows: number;
   minHolders: number; // the first window opens once this many wallets hold the token
-  vaultBps: number; // part of the trade volume that feeds the vault, in basis points (set by the operator)
+  rewardShare: number; // part of the fees received that funds the rewards pool, 0–1 (set by the operator)
 };
 
-/** What the API publishes: the game rules, without the vault share. */
-export type PublicRules = Omit<Rules, "vaultBps">;
+/** What the API publishes: the game rules, without the rewards share. */
+export type PublicRules = Omit<Rules, "rewardShare">;
 
 export type Status = "dcaing" | "waiting" | "notyet" | "idle" | "out";
 
@@ -41,8 +41,8 @@ export type Info = {
   windowStart: number; // unix seconds
   nextRoundAt: number;
 
-  pool: number; // NEAR that the next close will split (accrued vault fees not yet paid)
-  accrued: number; // all vault fees ever accrued
+  pool: number; // NEAR that the next close will split (rewards credited and not yet paid)
+  accrued: number; // all rewards ever credited to the pool
   goldenStack: number; // closes in a row with nobody qualifying
   dcaingNow: number;
   atRisk: number;

@@ -2,7 +2,7 @@
 
 ## Where the money comes from
 
-Every trade of the token pays a fee, and a share of it funds the **vault**. The pool for a round is everything credited to the vault and not yet paid, and never more than the vault account actually holds.
+A share of the fees the project earns funds the **vault**, every time they are claimed. The pool for a round is everything credited to the vault and not yet paid, and never more than the vault account actually holds.
 
 ## The split
 

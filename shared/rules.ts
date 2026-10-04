@@ -1,6 +1,6 @@
-import type { PublicRules, RuleCheck, Rules, Status } from "./types.ts";
+import type { PublicRules, RuleCheck, Status } from "./types.ts";
 
-/** Defaults for the game rules. The vault share is operator configuration and has no default. */
+/** Defaults for the game rules. The rewards share is operator configuration and has no default. */
 export const DEFAULT_RULES: PublicRules = {
   roundMin: 10,
   roundMax: 15,
@@ -77,9 +77,6 @@ export function allocate(weights: number[], pool: number, r: PublicRules): numbe
   const alloc = splitPool(out, pool, Math.max(r.maxShare, 1 / n));
   return alloc.map((a) => (a < r.minPayout ? 0 : a));
 }
-
-/** NEAR that one trade adds to the vault. */
-export const vaultCut = (q: number, r: Rules) => (q * r.vaultBps) / 10_000;
 
 const r3 = (n: number) => Math.round(n * 1000) / 1000;
 

@@ -13,7 +13,7 @@ Object.assign(process.env, {
   MIN_BUY: "0.1",
   MIN_TOTAL: "1",
   MIN_HOLDERS: "3",
-  VAULT_BPS: "250",
+  REWARD_SHARE: "0.25",
 });
 
 const { initConfig } = await import("../src/config.ts");
@@ -25,7 +25,7 @@ type Swap = import("../src/indexer.ts").Swap;
 type Move = import("../src/indexer.ts").Move;
 
 const DEX = "v2.ref-finance.near";
-const RATE = 0.025; // VAULT_BPS above, as a fraction of volume
+const SHARE = 0.25; // REWARD_SHARE above
 const E18 = 10n ** 18n;
 const Y24 = 10n ** 24n;
 
@@ -38,7 +38,8 @@ function rig() {
   const t0 = Math.floor(Date.now() / 1000) - 3600; // an hour ago, replayed fast
   let t = t0;
   // buy: `near` NEAR in, 100 tokens out per NEAR (price 0.01)
-  const block = (moves: { kind: Move["kind"]; w: string; near?: number; tokens?: number }[]) => {
+  // fees: NEAR the fee wallet received in this block
+  const block = (moves: { kind: Move["kind"]; w: string; near?: number; tokens?: number }[], fees = 0) => {
     const swaps = new Map<string, Swap>();
     const ms: Move[] = moves.map((m) => {
       const tx = `tx${n++}`;
@@ -47,7 +48,7 @@ function rig() {
       if (m.kind === "sell") swaps.set(tx, { nearIn: 0n, nearOut: BigInt(Math.round((m.near ?? 0) * 1e6)) * (Y24 / 1_000_000n), tokIn: tokens, tokOut: 0n });
       return { kind: m.kind, w: m.w, raw: tokens.toString(), tx, receipt: `r${n}`, idx: 0 };
     });
-    engine.onBlock({ height: ++height, t, moves: ms }, swaps);
+    engine.onBlock({ height: ++height, t, moves: ms, fees: BigInt(Math.round(fees * 1e6)) * (Y24 / 1_000_000n) }, swaps);
   };
   const tick = (sec: number) => {
     t += sec;
@@ -86,24 +87,26 @@ test("the timer waits for enough holders", () => {
 test("streaks, top-N split, dropouts and golden rounds", () => {
   const r = rig();
   // history before rounds start: counts toward totals, never pays
-  r.block([{ kind: "buy", w: "alice.near", near: 2 }, { kind: "buy", w: "bob.near", near: 2 }, { kind: "buy", w: "carl.near", near: 2 }, { kind: "buy", w: "dan.near", near: 0.5 }]);
+  r.block([{ kind: "buy", w: "alice.near", near: 2 }, { kind: "buy", w: "bob.near", near: 2 }, { kind: "buy", w: "carl.near", near: 2 }, { kind: "buy", w: "dan.near", near: 0.5 }], 5);
   r.start();
   assert.equal(r.engine.started, true);
   assert.equal(r.engine.current()?.no, 1);
   assert.equal(r.engine.pool(), 0, "history accrues nothing");
 
-  // window 1: alice, bob, carl buy. RATE of 3 NEAR → vault
+  // window 1: alice, bob, carl buy, and the platform claims 2 NEAR of fees: SHARE of it → pool
   r.tick(5);
   r.block([{ kind: "buy", w: "alice.near", near: 1 }, { kind: "buy", w: "bob.near", near: 1 }, { kind: "buy", w: "carl.near", near: 1 }]);
-  assert.ok(Math.abs(r.engine.pool() - 3 * RATE) < 1e-9);
+  assert.equal(r.engine.pool(), 0, "trading alone funds nothing");
+  r.block([], 2);
+  assert.ok(Math.abs(r.engine.pool() - 2 * SHARE) < 1e-9);
   r.tick(600); // close #1
   let round = r.reader.round(1)!;
   assert.equal(round.qualifiers, 3);
   assert.equal(round.payouts.length, 2, "only the top 2 are paid");
-  assert.ok(Math.abs(round.paid - 3 * RATE) < 1e-6, "top N split 100% between them");
+  assert.ok(Math.abs(round.paid - 2 * SHARE) < 1e-6, "top N split 100% between them");
 
   // window 2: only alice buys, carl sells (out), dan buys but total < 1
-  r.block([{ kind: "buy", w: "alice.near", near: 0.2 }, { kind: "sell", w: "carl.near", near: 0.5, tokens: 50 }, { kind: "buy", w: "dan.near", near: 0.2 }]);
+  r.block([{ kind: "buy", w: "alice.near", near: 0.2 }, { kind: "sell", w: "carl.near", near: 0.5, tokens: 50 }, { kind: "buy", w: "dan.near", near: 0.2 }], 0.4);
   r.tick(600);
   round = r.reader.round(2)!;
   assert.equal(round.qualifiers, 1, "dan is warming up, carl is out");
@@ -118,7 +121,7 @@ test("streaks, top-N split, dropouts and golden rounds", () => {
   assert.equal(r.db.meta.num("goldenStack"), 1);
 
   // window 4: bob moves tokens away (out), alice buys again → golden ×2 paid to alice
-  r.block([{ kind: "move", w: "bob.near", tokens: 10 }, { kind: "buy", w: "alice.near", near: 0.5 }, { kind: "recv", w: "friend.near", tokens: 10 }]);
+  r.block([{ kind: "move", w: "bob.near", tokens: 10 }, { kind: "buy", w: "alice.near", near: 0.5 }, { kind: "recv", w: "friend.near", tokens: 10 }], 1);
   r.tick(600);
   round = r.reader.round(4)!;
   assert.equal(round.golden, 2);
@@ -130,14 +133,15 @@ test("streaks, top-N split, dropouts and golden rounds", () => {
   // accounting: everything accrued was either paid or is still in the pool
   const m = r.db.meta;
   assert.ok(Math.abs(m.num("accrued") - m.num("committed") - r.engine.pool()) < 1e-9);
-  assert.ok(Math.abs(m.num("accrued") - (3 + 0.2 + 0.5 + 0.2 + 0.5) * RATE) < 1e-9);
+  assert.ok(Math.abs(m.num("feesIn") - (2 + 0.4 + 1)) < 1e-9, "fees before the start don't count");
+  assert.ok(Math.abs(m.num("accrued") - (2 + 0.4 + 1) * SHARE) < 1e-9);
 });
 
 test("snapshot shape", () => {
   const r = rig();
   r.block([{ kind: "recv", w: "a.near", tokens: 1 }, { kind: "recv", w: "b.near", tokens: 1 }, { kind: "recv", w: "c.near", tokens: 1 }]);
   r.start();
-  r.block([{ kind: "buy", w: "alice.near", near: 1.5 }]);
+  r.block([{ kind: "buy", w: "alice.near", near: 1.5 }], 1);
   const s = r.reader.snapshot();
   assert.equal(s.info.windowNo, 1);
   assert.equal(s.board.next.length, 1);
@@ -160,4 +164,22 @@ test("switching the token wipes the old token's state", async () => {
   assert.equal(r.reader.wallet("alice.near").known, false);
   assert.equal(r.db.meta.get("done"), undefined);
   assert.equal(r.db.meta.get("token"), "real.near");
+});
+
+test("fees: only new NEAR or wNEAR arriving at the fee wallet counts", async () => {
+  const { feeIn } = await import("../src/indexer.ts");
+  const fee = "vault.dcainnear.near";
+  const ok = { executor_id: fee, logs: [] as string[], status: { SuccessValue: "" } as Record<string, unknown> };
+  const o = (outcome = ok) => ({ block_height: 1, block_timestamp: 0, index: 0, id: "r", outcome });
+  const rc = (from: string, to: string, actions: unknown[]) => ({ predecessor_id: from, receiver_id: to, receipt: { Action: { actions } } }) as never;
+  const Y = 10n ** 24n;
+  assert.equal(feeIn(o(), rc("launchpad.near", fee, [{ Transfer: { deposit: (3n * Y).toString() } }]), fee), 3n * Y, "a claim");
+  assert.equal(feeIn(o(), rc("system", fee, [{ Transfer: { deposit: "5" } }]), fee), 0n, "gas refund");
+  assert.equal(feeIn(o(), rc("wrap.near", fee, [{ Transfer: { deposit: "5" } }]), fee), 0n, "unwrapping its own wNEAR");
+  assert.equal(feeIn(o(), rc(fee, "alice.near", [{ Transfer: { deposit: "5" } }]), fee), 0n, "a payout going out");
+  assert.equal(feeIn(o({ ...ok, status: { Failure: {} } }), rc("launchpad.near", fee, [{ Transfer: { deposit: "5" } }]), fee), 0n, "failed");
+  const wnear = (from: string) => ({ executor_id: "wrap.near", status: { SuccessValue: "" },
+    logs: [`EVENT_JSON:${JSON.stringify({ standard: "nep141", event: "ft_transfer", data: [{ old_owner_id: from, new_owner_id: fee, amount: "7" }] })}`] });
+  assert.equal(feeIn(o(wnear("launchpad.near")), undefined, fee), 7n, "a wNEAR claim");
+  assert.equal(feeIn(o(wnear(fee)), undefined, fee), 0n);
 });

@@ -34,7 +34,7 @@ function build(e: EnvLike) {
     maxShare: num(e.MAX_SHARE, DEFAULT_RULES.maxShare),
     minPayout: num(e.MIN_PAYOUT, DEFAULT_RULES.minPayout),
     minHolders: num(e.MIN_HOLDERS, DEFAULT_RULES.minHolders),
-    vaultBps: 0,
+    rewardShare: 0,
   };
   if (rules.roundMax < rules.roundMin) throw new Error("ROUND_MAX must be ≥ ROUND_MIN");
   if (!(rules.equalShare >= 0 && rules.equalShare <= 1)) throw new Error("EQUAL_SHARE must be between 0 and 1");
@@ -44,10 +44,12 @@ function build(e: EnvLike) {
   const test = main && !e.TOKEN_CONTRACT;
   const token = test ? TEST.token : need("TOKEN_CONTRACT");
   const vaultAccount = e.VAULT_ACCOUNT || (test ? TEST.vault : need("VAULT_ACCOUNT"));
-  // the vault share has no default: set VAULT_BPS (as a Secret) before going live. Test mode accrues nothing without it.
-  rules.vaultBps = num(e.VAULT_BPS, NaN);
-  if (Number.isNaN(rules.vaultBps)) rules.vaultBps = test ? 0 : Number(need("VAULT_BPS"));
-  if (!(rules.vaultBps >= 0 && rules.vaultBps <= 10_000)) throw new Error("VAULT_BPS must be between 0 and 10000");
+  // fees are claimed into FEE_ACCOUNT (the vault by default); REWARD_SHARE of what arrives funds the pool.
+  // It has no default: set it as a Secret before going live. Test mode credits nothing without it.
+  const feeAccount = e.FEE_ACCOUNT || vaultAccount;
+  rules.rewardShare = num(e.REWARD_SHARE, NaN);
+  if (Number.isNaN(rules.rewardShare)) rules.rewardShare = test ? 0 : Number(need("REWARD_SHARE"));
+  if (!(rules.rewardShare >= 0 && rules.rewardShare <= 1)) throw new Error("REWARD_SHARE must be between 0 and 1");
   const dexes = list(e.DEX_ACCOUNTS || (main ? "v2.ref-finance.near" : "ref-finance-101.testnet"));
   const vaultKey = e.VAULT_PRIVATE_KEY || "";
 
@@ -68,9 +70,10 @@ function build(e: EnvLike) {
     dexes: new Set(dexes),
     ref: e.REF_CONTRACT || dexes[0],
     refPoolId: e.REF_POOL_ID ? Number(e.REF_POOL_ID) : test ? TEST.pool : null,
-    // never DCAers: the token itself, DEXes, the vault, plus anything listed
-    excluded: new Set([token, vaultAccount, ...dexes, ...list(e.EXCLUDE_ACCOUNTS)]),
+    // never DCAers: the token itself, DEXes, the vault and fee wallet, plus anything listed
+    excluded: new Set([token, vaultAccount, feeAccount, ...dexes, ...list(e.EXCLUDE_ACCOUNTS)]),
     vaultAccount,
+    feeAccount,
     vaultKey,
     test,
     dryRun: test || e.DRY_RUN === "true" || !vaultKey,
