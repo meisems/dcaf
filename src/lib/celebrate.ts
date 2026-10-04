@@ -2,7 +2,7 @@
  * A burst of little blocks (NEAR green, cyan, lavender) for moments worth it:
  * a payout landing in a tracked wallet. Hand-rolled with the Web Animations API.
  */
-const COLORS = ["#00EC97", "#5CFFC2", "#17D9D4", "#9797FF"];
+const COLORS = ["#FFC83D", "#FFE27A", "#FF8A3D", "#F472B6"];
 
 export function celebrate(x = window.innerWidth / 2, y = window.innerHeight * 0.35) {
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;

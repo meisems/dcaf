@@ -4,7 +4,7 @@ import { ArrowRight, BuyCoin, Bell, Coins, Flame, Lock, Users, Vault } from "../
 import { Orbit } from "../components/Orbit";
 import { memo } from "react";
 import { Ago, AppLink, Avatar, Card, Empty, Left, More, Num, StatusPill, Streak, useUi } from "../components/ui";
-import { useLive, type Snapshot } from "../lib/api";
+import { useLive, type Snapshot, paidCount } from "../lib/api";
 import { acct, near, usd } from "../lib/format";
 import { useMe } from "../lib/me";
 import { disableReminders, enableReminders, useReminders } from "../lib/remind";
@@ -28,7 +28,7 @@ export default function Home() {
             <br />
             <span className="grad-text">No jitters.</span>
           </h1>
-          <p className="lead">Buy every window. Top {R?.topN ?? 10} get paid, automatically.</p>
+          <p className="lead">Buy every window. {R?.topN ? `Top ${R.topN} get paid` : "Everyone who DCAs gets paid"}, automatically.</p>
           <div className="cta">
             <a className="btn btn-grad btn-lg" href={LINKS.buy} target="_blank" rel="noreferrer">Buy ${SYMBOL} <ArrowRight size={18} /></a>
             <AppLink className="btn btn-soft btn-lg" to="/me">My streak</AppLink>
@@ -51,7 +51,7 @@ export default function Home() {
       <ol className="flow" data-reveal>
         <Step n="01" icon={<BuyCoin size={20} />} t={`≥ ${R?.minBuy ?? 0.1} NEAR`} s="each window" />
         <Step n="02" icon={<Lock size={20} />} t="Hold" s="never sell" />
-        <Step n="03" icon={<Coins size={20} />} t={`Top ${R?.topN ?? 10}`} s="get paid" />
+        <Step n="03" icon={<Coins size={20} />} t={R?.topN ? `Top ${R.topN}` : "Everyone"} s="gets paid" />
       </ol>
 
       <section className="duo" data-reveal>
@@ -105,7 +105,7 @@ function MeStrip({ snap }: { snap: Snapshot }) {
     );
   if (!mine) return <div className="me-strip skeleton" />;
   const i = snap.info;
-  const topN = i.rules.topN;
+  const topN = paidCount(i.rules);
   const msg =
     mine.status === "dcaing"
       ? mine.rank !== null && mine.rank <= topN ? <>#{mine.rank} · <b>≈ {near(mine.est)}</b></> : <>#{mine.rank} · outside top {topN}</>

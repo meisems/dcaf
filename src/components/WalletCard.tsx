@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { LINKS } from "../config";
-import { getWallet, peekWallet, type Snapshot, type WalletReport } from "../lib/api";
+import { getWallet, peekWallet, type Snapshot, type WalletReport, paidCount } from "../lib/api";
 import { acct, dateTime, near, pct } from "../lib/format";
 import { ArrowUpRight, Check, Chevron, Cross, Dots } from "./Icons";
 import { Ago, Avatar, Left, Num, StatusPill, Streak } from "./ui";
@@ -31,7 +31,7 @@ export function WalletCard({ rep, snap, mine }: { rep: WalletReport; snap: Snaps
   const { info } = snap;
   const R = info.rules;
   const [open, setOpen] = useState(false);
-  const inTop = rep.rank !== null && rep.rank <= R.topN;
+  const inTop = rep.rank !== null && rep.rank <= paidCount(R);
 
   const head = (() => {
     if (!rep.known) return { h: "No buys yet", s: `${R.minBuy} NEAR starts a streak` };

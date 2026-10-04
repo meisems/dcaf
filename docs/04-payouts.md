@@ -6,28 +6,32 @@ Every trade of the token pays a fee, and a share of it funds the **vault**. The 
 
 ## The split
 
-1. Take every wallet that qualifies.
-2. Compute `weight = streak^1.5 × buy^0.5`, using the streak it will have after this window.
-3. Keep the **top 10** by weight.
-4. Split the pool between them, proportional to weight.
+Every wallet that qualifies is paid.
+
+1. **Equal half:** 50% of the pool is split equally between all of them.
+2. **Weighted half:** the other 50% is split by `weight = streak × √buy`, using the streak the wallet will have after this window.
+3. **Cap:** no wallet gets more than 25% of the pool. Anything above the cap is shared among the others. With fewer than four qualifiers the cap is an equal share, so the whole pool is still paid.
 
 | Qualifiers | Who is paid |
 |---|---|
 | 0 | nobody. The pool **stacks** into the next round (a *golden round*) |
-| 2 | both, 100% of the pool between them |
-| 25 | the top 10 only |
+| 1 | that wallet, the whole pool |
+| 2 | both, 50% each |
+| 25 | all 25 |
 
 Slices smaller than **0.001 NEAR** are skipped and roll over.
 
 ## Example
 
-Pool: 3 NEAR, three qualifiers.
+Pool: 4 NEAR, five qualifiers. The equal half gives each 0.4 NEAR, and the weighted half adds the rest. alice and bob would each get more than 1 NEAR, so both are capped at 1 NEAR (25%), and the extra is shared among the other three.
 
 | Wallet | Streak | Buy | Weight | Paid |
 |---|---|---|---|---|
-| alice.near | 9 | 0.5 | 19.09 | 2.03 |
-| bob.near | 4 | 1.0 | 8.00 | 0.85 |
-| carl.near | 1 | 1.2 | 1.10 | 0.12 |
+| alice.near | 9 | 0.5 | 6.36 | 1.00 |
+| bob.near | 4 | 1.0 | 4.00 | 1.00 |
+| carl.near | 2 | 0.3 | 1.10 | 0.70 |
+| dan.near | 1 | 2.0 | 1.41 | 0.75 |
+| erin.near | 1 | 0.1 | 0.32 | 0.55 |
 
 ## Delivery
 

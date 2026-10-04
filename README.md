@@ -4,7 +4,7 @@ A NEAR DCA tracker and rewards engine, in the spirit of dca.community.
 
 - Tracks every wallet buying and selling the token, live, straight from the chain.
 - Time is cut into random **10–15 minute windows**. Buy ≥ 0.1 NEAR in a window to keep your **streak**.
-- At each close, the **top 10 DCAers** (by `streak^1.5 × buy^0.5`) split the **vault**. Two qualifiers? They split 100%.
+- At each close, **every qualifying DCAer is paid** from the **vault**: half split equally, half by `streak × √buy`, and no wallet over 25%.
 - Sell once or move tokens away and that wallet is out for good.
 - **No wallet connect.** Rewards are sent to buyers automatically.
 

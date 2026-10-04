@@ -19,7 +19,7 @@ export function useFlip<T extends HTMLElement>(dep: unknown) {
       next.set(k, top);
       if (reduced || !prev.current) return;
       const before = prev.current.get(k);
-      if (before === undefined) n.animate([{ backgroundColor: "rgba(0, 236, 151, 0.16)" }, { backgroundColor: "transparent" }], { duration: 1400, easing: "ease-out" });
+      if (before === undefined) n.animate([{ backgroundColor: "rgba(255, 200, 61, 0.16)" }, { backgroundColor: "transparent" }], { duration: 1400, easing: "ease-out" });
       else if (Math.abs(before - top) > 1)
         n.animate([{ transform: `translateY(${before - top}px)` }, { transform: "none" }], { duration: 520, easing: "cubic-bezier(.2, .8, .2, 1)" });
     });

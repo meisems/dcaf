@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { Snapshot } from "../lib/api";
+import { paidCount, type Snapshot } from "../lib/api";
 import { acct, near } from "../lib/format";
 import { Countdown, useWindowAnim } from "./Clock";
 import { Mark } from "./Logo";
@@ -32,7 +32,7 @@ export function Orbit({ snap }: { snap: Snapshot }) {
   const anim = useWindowAnim(info.windowStart, info.nextRoundAt, open);
   const urgent = useUrgent(open ? info.nextRoundAt : 0);
   const crew = snap.board.next.slice(0, 12);
-  const topN = info.rules.topN;
+  const cut = paidCount(info.rules);
 
   const [pings, setPings] = useState<Ping[]>([]);
   const seen = useRef(snap.trades.at(-1)?.tx);
@@ -56,20 +56,20 @@ export function Orbit({ snap }: { snap: Snapshot }) {
         <span className="live-dot" />
         <span>{open ? `Window #${info.windowNo}` : "Warming up"}</span>
         {info.goldenStack > 0 && <span className="golden">Golden ×{info.goldenStack + 1}</span>}
-        <span className="orbit-top-r">Top {topN} paid</span>
+        <span className="orbit-top-r">{info.rules.topN > 0 ? `Top ${info.rules.topN} paid` : "Every DCAer paid"}</span>
       </div>
 
       <div className="orbit-stage"><div className="orbit-box">
         <svg viewBox="0 0 340 340" className={`orbit-svg${open ? "" : " idle"}`} style={anim.style} aria-hidden>
           <defs>
             <linearGradient id="arc" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stopColor="#00EC97" />
-              <stop offset=".6" stopColor="#17D9D4" />
-              <stop offset="1" stopColor="#9797FF" />
+              <stop offset="0" stopColor="#FFC83D" />
+              <stop offset=".6" stopColor="#FF8A3D" />
+              <stop offset="1" stopColor="#F472B6" />
             </linearGradient>
             <radialGradient id="core" cx="50%" cy="50%" r="50%">
-              <stop offset="0" stopColor="#00EC97" stopOpacity=".22" />
-              <stop offset="1" stopColor="#00EC97" stopOpacity="0" />
+              <stop offset="0" stopColor="#FFC83D" stopOpacity=".22" />
+              <stop offset="1" stopColor="#FFC83D" stopOpacity="0" />
             </radialGradient>
             {/* used inside the rotated tick group, so it is already in that group's frame */}
             <mask id="lit-mask" maskUnits="userSpaceOnUse">
@@ -99,7 +99,7 @@ export function Orbit({ snap }: { snap: Snapshot }) {
 
         <div className="orbit-crew" style={{ ["--n" as string]: Math.max(1, crew.length) }}>
           {crew.map((r, k) => (
-            <span key={r.id} className={`crew${k < topN ? " paid" : ""}`} style={{ ["--i" as string]: k }} title={`${r.id} · #${k + 1}`}>
+            <span key={r.id} className={`crew${k < cut ? " paid" : ""}`} style={{ ["--i" as string]: k }} title={`${r.id} · #${k + 1}`}>
               <span className="crew-in"><Avatar id={r.id} size={26} /></span>
             </span>
           ))}

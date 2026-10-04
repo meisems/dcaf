@@ -2,6 +2,7 @@ import { useSyncExternalStore } from "react";
 import { API_URL } from "../config";
 import type { Round, Snapshot, WalletReport } from "../../shared/types.ts";
 
+export { paidCount } from "../../shared/rules.ts";
 export type { BoardRow, Info, Payout, Round, Snapshot, Status, Trade, WalletReport } from "../../shared/types.ts";
 
 type State = { snap: Snapshot | null; online: boolean; loaded: boolean; stale: boolean };

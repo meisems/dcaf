@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 
 import { PriceChart } from "../components/PriceChart";
 import { Ago, AppLink, Avatar, Card, Empty, PageHead, StatusPill, Streak } from "../components/ui";
-import { useLive, type Status } from "../lib/api";
+import { useLive, type Status, paidCount } from "../lib/api";
 import { acct, near } from "../lib/format";
 import { Countdown, useWindowAnim } from "../components/Clock";
 import { usePageName } from "../lib/hooks";
@@ -65,7 +65,7 @@ export default function Live() {
                   <thead><tr><th>#</th><th>Wallet</th><th>Streak</th><th className="r">This window</th><th className="r">Est.</th></tr></thead>
                   <tbody>
                     {dcaers.map((r, k) => (
-                      <tr key={r.id} className={k < i.rules.topN ? "paid" : "dim"}>
+                      <tr key={r.id} className={k < paidCount(i.rules) ? "paid" : "dim"}>
                         <td className="muted">{k + 1}</td>
                         <td><AppLink to={`/wallet/${r.id}`} className="who"><Avatar id={r.id} size={22} /><span className="mono">{acct(r.id, 20)}</span></AppLink></td>
                         <td><Streak n={r.liveStreak} /></td>

@@ -24,7 +24,7 @@ Everything the app shows, cached for one second.
     "pool": 3.214,
     "dcaingNow": 17,
     "topStreak": 41,
-    "rules": { "minBuy": 0.1, "minTotal": 1, "topN": 10 }
+    "rules": { "minBuy": 0.1, "minTotal": 1, "topN": 0, "equalShare": 0.5, "maxShare": 0.25 }
   }
 }
 ```

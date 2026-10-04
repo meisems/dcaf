@@ -10,8 +10,9 @@ export type Rules = {
   minTotal: number; // NEAR a wallet must have bought in total
   streakExp: number;
   amountExp: number;
-  topN: number; // only the top N DCAers of a window are paid
-  maxShare: number; // optional cap per wallet (1 = no cap)
+  topN: number; // only the top N DCAers of a window are paid (0 = everyone who qualifies)
+  equalShare: number; // part of the pool split equally between everyone paid (the rest goes by weight)
+  maxShare: number; // cap per wallet, as a part of the pool (relaxed to 1/n with few qualifiers)
   minPayout: number; // slices smaller than this (NEAR) roll over
   graceWindows: number;
   minHolders: number; // the first window opens once this many wallets hold the token
