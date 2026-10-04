@@ -9,7 +9,7 @@ import type { Rules } from "../../shared/types.ts";
 export type EnvLike = Record<string, string | undefined>;
 
 /** Stand-ins used until the real token is configured: an active token, a vault that never pays. */
-const TEST = { token: "token.v2.ref-finance.near", symbol: "REF", vault: "dcainnear-test-vault.near", pool: 79 };
+const TEST = { token: "token.rhealab.near", symbol: "RHEA", vault: "dcainnear-test-vault.near", pool: null };
 
 const list = (v: string | undefined) => (v ?? "").split(",").map((s) => s.trim()).filter(Boolean);
 const num = (v: string | undefined, d: number) => (v !== undefined && v !== "" && Number.isFinite(+v) ? +v : d);
@@ -40,7 +40,7 @@ function build(e: EnvLike) {
   if (!(rules.equalShare >= 0 && rules.equalShare <= 1)) throw new Error("EQUAL_SHARE must be between 0 and 1");
   if (!(rules.maxShare > 0 && rules.maxShare <= 1)) throw new Error("MAX_SHARE must be above 0 and at most 1");
 
-  // test mode: until TOKEN_CONTRACT is set on mainnet, track REF on its Rhea REF/wNEAR pool as a dry run
+  // test mode: until TOKEN_CONTRACT is set on mainnet, track RHEA (an actively traded token) as a dry run
   const test = main && !e.TOKEN_CONTRACT;
   const token = test ? TEST.token : need("TOKEN_CONTRACT");
   const vaultAccount = e.VAULT_ACCOUNT || (test ? TEST.vault : need("VAULT_ACCOUNT"));
@@ -50,7 +50,8 @@ function build(e: EnvLike) {
   rules.rewardShare = num(e.REWARD_SHARE, NaN);
   if (Number.isNaN(rules.rewardShare)) rules.rewardShare = test ? 0 : Number(need("REWARD_SHARE"));
   if (!(rules.rewardShare >= 0 && rules.rewardShare <= 1)) throw new Error("REWARD_SHARE must be between 0 and 1");
-  const dexes = list(e.DEX_ACCOUNTS || (main ? "v2.ref-finance.near" : "ref-finance-101.testnet"));
+  // Rhea's classic and concentrated pools, plus the aggregator that routes into them
+  const dexes = list(e.DEX_ACCOUNTS || (main ? "v2.ref-finance.near,dclv2.ref-labs.near,aggregatedex.near" : "ref-finance-101.testnet"));
   const vaultKey = e.VAULT_PRIVATE_KEY || "";
 
   return {
