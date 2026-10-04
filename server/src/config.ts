@@ -30,6 +30,7 @@ function build(e: EnvLike) {
     minBuy: num(e.MIN_BUY, DEFAULT_RULES.minBuy),
     minTotal: num(e.MIN_TOTAL, DEFAULT_RULES.minTotal),
     topN: num(e.TOP_N, DEFAULT_RULES.topN),
+    equalShare: num(e.EQUAL_SHARE, DEFAULT_RULES.equalShare),
     maxShare: num(e.MAX_SHARE, DEFAULT_RULES.maxShare),
     minPayout: num(e.MIN_PAYOUT, DEFAULT_RULES.minPayout),
     minHolders: num(e.MIN_HOLDERS, DEFAULT_RULES.minHolders),
@@ -38,6 +39,8 @@ function build(e: EnvLike) {
   };
   if (rules.roundMax < rules.roundMin) throw new Error("ROUND_MAX must be ≥ ROUND_MIN");
   if (rules.vaultBps > rules.feeBps) throw new Error("VAULT_BPS can't be more than FEE_BPS");
+  if (!(rules.equalShare >= 0 && rules.equalShare <= 1)) throw new Error("EQUAL_SHARE must be between 0 and 1");
+  if (!(rules.maxShare > 0 && rules.maxShare <= 1)) throw new Error("MAX_SHARE must be above 0 and at most 1");
 
   // test mode: until TOKEN_CONTRACT is set on mainnet, track REF on its Rhea REF/wNEAR pool as a dry run
   const test = main && !e.TOKEN_CONTRACT;

@@ -29,9 +29,10 @@ Two Cloudflare projects, both built straight from this GitHub repo. No CLI neede
 | `VAULT_ACCOUNT` | Text | `vault.dcainnear.near` |
 | `START_BLOCK` | Text | launch block height |
 | `REF_POOL_ID` | Text | TOKEN/wNEAR pool id on Rhea |
-| `FEE_BPS` | Text | `300` (3% creator fee) |
-| `VAULT_BPS` | Text | `100` (1% of volume to the vault; the other 2% stays in the creator wallet) |
-| `TOP_N` | Text | `10` |
+| `FEE_BPS` / `VAULT_BPS` | Text | optional: the fee and the part of it that feeds the vault, in basis points (defaults in `shared/rules.ts`) |
+| `TOP_N` | Text | `0` (everyone who qualifies is paid; a number pays only the top N) |
+| `EQUAL_SHARE` | Text | `0.5` (part of each round split equally; the rest goes by weight) |
+| `MAX_SHARE` | Text | `0.25` (most of a round one wallet can take) |
 | `MIN_BUY` / `MIN_TOTAL` | Text | `0.1` / `1` |
 | `ROUND_MIN` / `ROUND_MAX` | Text | `10` / `15` (minutes) |
 | `MIN_HOLDERS` | Text | `15` (the first window opens once this many wallets hold the token) |

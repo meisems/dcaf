@@ -9,11 +9,11 @@ No. Payouts arrive in your wallet right after the round.
 **I missed a window.**
 Your streak resets to zero. Buy in the next one to start again. Only selling or moving tokens is permanent.
 
-**Why only the top 10?**
-So the vault rewards the most consistent DCAers instead of being spread thin. With fewer qualifiers, they split everything.
+**Who gets paid?**
+Everyone who qualifies. Half of each round is shared equally, the other half by streak and buy size, and no wallet takes more than 25%.
 
 **Is one big buy better?**
-Rarely. Buy size is square-rooted, streak is raised to 1.5.
+No. Buy size is square-rooted and capped by the 25% limit; showing up every window counts more.
 
 **What if nobody qualifies?**
 The pool stacks into the next round: a golden round.

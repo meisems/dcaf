@@ -19,12 +19,17 @@ The wallet must still hold every token it bought.
 
 ## 4. Get paid
 
-When a window closes, the engine ranks everyone who qualified by **weight** and the **top 10** split the vault, proportional to weight. If only two people qualified, those two split everything.
+When a window closes, **everyone who qualified is paid**. The vault is split in two halves:
+
+- **Half is shared equally.** Every DCAer gets the same base slice, whatever their size.
+- **Half goes by weight**, so consistency earns more:
 
 ```
-weight = streak^1.5 × buy^0.5
+weight = streak × √buy
 ```
 
-Streak counts far more than size: showing up every window beats one large buy.
+No single wallet can take more than **25%** of a round. Whatever a cap trims goes to everyone else.
+
+Streak counts more than size: showing up every window beats one large buy.
 
 Next: [Rules](/docs/rules)

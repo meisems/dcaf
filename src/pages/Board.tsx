@@ -1,7 +1,7 @@
 import { Fragment, useState } from "react";
 
 import { AppLink, Avatar, Empty, PageHead, StatusPill, Streak } from "../components/ui";
-import { useLive, type BoardRow } from "../lib/api";
+import { useLive, type BoardRow, paidCount } from "../lib/api";
 import { acct, near, pct } from "../lib/format";
 import { Search } from "../components/Icons";
 import { useFlip } from "../lib/flip";
@@ -24,7 +24,7 @@ export default function Board() {
   const [filter, setFilter] = useState("");
   const body = useFlip<HTMLTableSectionElement>(`${tab}:${snap?.board[tab].map((r) => r.id).join()}`);
   if (!snap) return <div className="card skeleton" style={{ height: 480 }} />;
-  const topN = snap.info.rules.topN;
+  const topN = paidCount(snap.info.rules);
   const f = filter.trim().toLowerCase();
   const ranked = snap.board[tab].map((r, k) => ({ r, k }));
   const rows = snap.board[tab];
@@ -120,7 +120,7 @@ function jump(id: string) {
   const find = () => document.querySelector<HTMLElement>(`[data-flip="${CSS.escape(id)}"]`);
   const go = (el: HTMLElement) => {
     el.scrollIntoView({ behavior: "smooth", block: "center" });
-    el.animate([{ backgroundColor: "rgba(0, 236, 151, 0.28)" }, { backgroundColor: "transparent" }], { duration: 1800, easing: "ease-out" });
+    el.animate([{ backgroundColor: "rgba(255, 200, 61, 0.28)" }, { backgroundColor: "transparent" }], { duration: 1800, easing: "ease-out" });
   };
   const el = find();
   if (el) return go(el);

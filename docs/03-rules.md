@@ -1,6 +1,6 @@
 # Rules
 
-A wallet is paid in a round only if **all** of these are true when the window closes:
+A wallet is paid in a round if **all** of these are true when the window closes:
 
 | # | Check | Default |
 |---|---|---|
@@ -8,7 +8,6 @@ A wallet is paid in a round only if **all** of these are true when the window cl
 | 2 | Bought in total, across all windows | ≥ 1 NEAR |
 | 3 | Never sold | – |
 | 4 | Still holds every token it bought | – |
-| 5 | Ranked in the top N by weight | N = 10 |
 
 ## Statuses
 

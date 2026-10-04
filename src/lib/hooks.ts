@@ -34,7 +34,7 @@ const readTheme = (): Theme => (document.documentElement.dataset.theme as Theme)
 
 function applyTheme(next: Theme) {
   document.documentElement.dataset.theme = next;
-  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", next === "light" ? "#F3F6F5" : "#050607");
+  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", next === "light" ? "#F7F3EC" : "#080705");
   try {
     localStorage.setItem("dcaf-theme", next);
   } catch {

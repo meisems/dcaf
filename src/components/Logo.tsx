@@ -17,14 +17,14 @@ export function Mark({ size = 36, shadow = false, live = false, title }: { size?
     <svg className="mark-art" width={size} height={size} viewBox="0 0 64 64" aria-hidden>
       <defs>
         <radialGradient id={id("skin")} cx="40%" cy="30%" r="78%">
-          <stop offset="0" stopColor="#9DFFD8" />
-          <stop offset=".35" stopColor="#00EC97" />
-          <stop offset=".75" stopColor="#00B877" />
-          <stop offset="1" stopColor="#025438" />
+          <stop offset="0" stopColor="#FFF1B8" />
+          <stop offset=".35" stopColor="#FFC83D" />
+          <stop offset=".75" stopColor="#E39B12" />
+          <stop offset="1" stopColor="#6E4100" />
         </radialGradient>
         <linearGradient id={id("deep")} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#013322" />
-          <stop offset="1" stopColor="#00140D" />
+          <stop offset="0" stopColor="#3A2400" />
+          <stop offset="1" stopColor="#170E00" />
         </linearGradient>
         <mask id={id("cut")} maskUnits="userSpaceOnUse">
           <rect width="64" height="64" fill="#fff" />
@@ -35,7 +35,7 @@ export function Mark({ size = 36, shadow = false, live = false, title }: { size?
           <feGaussianBlur in="SourceAlpha" stdDeviation="5" result="dome" />
           <feGaussianBlur in="SourceAlpha" stdDeviation="1.1" result="edge" />
           <feComposite in="dome" in2="edge" operator="arithmetic" k2=".75" k3=".45" result="h" />
-          <feSpecularLighting in="h" surfaceScale="5" specularConstant=".85" specularExponent="18" lightingColor="#E9FFF6" result="s">
+          <feSpecularLighting in="h" surfaceScale="5" specularConstant=".85" specularExponent="18" lightingColor="#FFF8E6" result="s">
             <fePointLight x="-20" y="-40" z="60" />
           </feSpecularLighting>
           <feComposite in="s" in2="SourceAlpha" operator="in" result="s2" />
@@ -59,12 +59,12 @@ export function Mark({ size = 36, shadow = false, live = false, title }: { size?
         <g mask={`url(#${id("cut")})`}><circle {...COIN} fill={`url(#${id("skin")})`} /></g>
       </g>
       <g clipPath={`url(#${id("clip")})`}>
-        <circle {...COIN} fill="none" stroke="#001A10" strokeOpacity=".55" strokeWidth="3" filter={`url(#${id("ao")})`} />
+        <circle {...COIN} fill="none" stroke="#2A1A00" strokeOpacity=".55" strokeWidth="3" filter={`url(#${id("ao")})`} />
       </g>
     </svg>
     {live && (
       <svg className="mark-fx" width={size} height={size} viewBox="0 0 64 64" aria-hidden>
-        <path className="mark-charge" d={STEPS} fill="none" stroke="#9DFFD8" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" pathLength={1} />
+        <path className="mark-charge" d={STEPS} fill="none" stroke="#FFF1B8" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" pathLength={1} />
       </svg>
     )}
     </span>
