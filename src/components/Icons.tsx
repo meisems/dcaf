@@ -82,7 +82,8 @@ export const Vault = ({ size, ...p }: P) => (
 export const Users = ({ size, ...p }: P) => (
   <svg {...base(size)} {...p}><circle cx="9" cy="8.5" r="3.5" /><path d="M2.5 19.5a6.5 6.5 0 0 1 13 0M16 5.2a3.5 3.5 0 0 1 0 6.6M18.5 14a6.5 6.5 0 0 1 3 5.5" /></svg>
 );
-export const Bean = ({ size, ...p }: P) => (
-  <svg {...base(size)} {...p}><ellipse cx="12" cy="12" rx="6.5" ry="9" transform="rotate(32 12 12)" /><path d="M8.8 15.9v-1.2h2.1v-2.5H13V9.7h2.1V8.5" /></svg>
+/** The mark as a line icon: a coin with a rising staircase. */
+export const BuyCoin = ({ size, ...p }: P) => (
+  <svg {...base(size)} {...p}><circle cx="12" cy="12" r="9" /><path d="M7 16h3.5v-4h3.5V8H17" /></svg>
 );
 export const Close = Cross;

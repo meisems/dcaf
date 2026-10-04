@@ -1,6 +1,6 @@
 
 import { LINKS, SYMBOL } from "../config";
-import { ArrowRight, Bean, Bell, Coins, Flame, Lock, Users, Vault } from "../components/Icons";
+import { ArrowRight, BuyCoin, Bell, Coins, Flame, Lock, Users, Vault } from "../components/Icons";
 import { Orbit } from "../components/Orbit";
 import { memo } from "react";
 import { Ago, AppLink, Avatar, Card, Empty, Left, More, Num, StatusPill, Streak, useUi } from "../components/ui";
@@ -49,7 +49,7 @@ export default function Home() {
       </section>
 
       <ol className="flow" data-reveal>
-        <Step n="01" icon={<Bean size={20} />} t={`≥ ${R?.minBuy ?? 0.1} NEAR`} s="each window" />
+        <Step n="01" icon={<BuyCoin size={20} />} t={`≥ ${R?.minBuy ?? 0.1} NEAR`} s="each window" />
         <Step n="02" icon={<Lock size={20} />} t="Hold" s="never sell" />
         <Step n="03" icon={<Coins size={20} />} t={`Top ${R?.topN ?? 10}`} s="get paid" />
       </ol>
@@ -100,7 +100,7 @@ function MeStrip({ snap }: { snap: Snapshot }) {
   if (!me)
     return (
       <AppLink to="/me" className="me-strip ghost" data-reveal>
-        <Bean size={18} /> <span>Track your wallet</span> <small className="muted">no connect</small> <ArrowRight size={16} />
+        <BuyCoin size={18} /> <span>Track your wallet</span> <small className="muted">no connect</small> <ArrowRight size={16} />
       </AppLink>
     );
   if (!mine) return <div className="me-strip skeleton" />;

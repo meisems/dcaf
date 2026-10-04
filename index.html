@@ -24,7 +24,7 @@
       })();
     </script>
     <style>
-      /* ---------- boot: blocks assemble the bean. Follows the active theme. ---------- */
+      /* ---------- boot: blocks assemble the coin. Follows the active theme. ---------- */
       :root { --ld-bg: #050607; --ld-ink: #EEF4F1; --ld-dim: rgba(238, 244, 241, .5); --ld-line: rgba(255, 255, 255, .055); --ld-cell: rgba(255, 255, 255, .08); --ld-sh: .7; }
       :root[data-theme="light"] { --ld-bg: #F3F6F5; --ld-ink: #06110C; --ld-dim: rgba(6, 17, 12, .5); --ld-line: rgba(6, 20, 14, .06); --ld-cell: rgba(6, 20, 14, .08); --ld-sh: .25; }
       html, body { margin: 0; background: var(--ld-bg); }
@@ -51,10 +51,9 @@
       .ld-charge { fill: none; stroke: #B6FFE3; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 1; opacity: 0; filter: drop-shadow(0 0 2px #00EC97); }
       .ld-bean.fused .ld-charge { opacity: 1; animation: ld-draw .55s cubic-bezier(.65, 0, .35, 1) .3s forwards, ld-out .6s ease 1.1s forwards; }
       .ld-shadow { opacity: var(--ld-sh); }
-      .ld-word { display: flex; gap: 2px; perspective: 400px; font: 800 44px/1 "Unbounded", system-ui, sans-serif; letter-spacing: -0.04em; height: 50px; }
+      .ld-word { display: flex; gap: 2px; perspective: 400px; font: 800 clamp(30px, 10vw, 44px)/1 "Unbounded", system-ui, sans-serif; letter-spacing: -0.04em; height: 50px; }
       .ld-word span { display: inline-block; opacity: 0; transform: rotateX(-95deg) translateY(10px); transform-origin: 50% 100%; animation: ld-flip .6s cubic-bezier(.2, 1.2, .3, 1) forwards; }
-      .ld-word span:nth-child(1) { animation-delay: 1.25s; } .ld-word span:nth-child(2) { animation-delay: 1.33s; }
-      .ld-word span:nth-child(3) { animation-delay: 1.41s; } .ld-word span:nth-child(4) { animation-delay: 1.49s; }
+      .ld-word span { animation-delay: calc(1.25s + var(--i) * .06s); }
       .ld-chain { display: grid; justify-items: center; gap: 10px; }
       .ld-blocks { display: flex; gap: 5px; }
       .ld-blocks i { width: 11px; height: 11px; border-radius: 3px; background: var(--ld-cell); animation: ld-fill .3s ease forwards; }
@@ -88,7 +87,8 @@
               <linearGradient id="b-deep" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#013322" /><stop offset="1" stop-color="#00140D" /></linearGradient>
               <mask id="b-cut" maskUnits="userSpaceOnUse">
                 <rect width="64" height="64" fill="#fff" />
-                <path d="M23.4 41.6v-3.4h5.7v-6.7h5.7v-6.7h5.7v-3.4" fill="none" stroke="#000" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M20.5 41H26V35H32V29H38V23H43.5" fill="none" stroke="#000" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" />
+                <circle cx="32" cy="31" r="19" fill="none" stroke="#000" stroke-width="1.3" />
               </mask>
               <filter id="b-lit" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
                 <feGaussianBlur in="SourceAlpha" stdDeviation="5" result="dome" />
@@ -105,15 +105,15 @@
                 <feComposite in="g" in2="s2" operator="arithmetic" k2="1" k3=".8" />
               </filter>
               <filter id="b-sh" x="-50%" y="-80%" width="200%" height="260%"><feGaussianBlur stdDeviation="2.4" /></filter>
-              <clipPath id="b-clip"><ellipse cx="32" cy="31" rx="17.2" ry="23.6" transform="rotate(32 32 31)" /></clipPath>
+              <clipPath id="b-clip"><circle cx="32" cy="31" r="23" /></clipPath>
             </defs>
-            <ellipse class="ld-shadow" cx="34.5" cy="57.5" rx="16" ry="3.2" fill="#000" filter="url(#b-sh)" />
-            <ellipse cx="32" cy="31" rx="17.2" ry="23.6" transform="rotate(32 32 31)" fill="url(#b-deep)" />
-            <g filter="url(#b-lit)"><g mask="url(#b-cut)"><ellipse cx="32" cy="31" rx="17.2" ry="23.6" transform="rotate(32 32 31)" fill="url(#b-skin)" /></g></g>
-            <g clip-path="url(#b-clip)"><path class="ld-charge" d="M23.4 41.6v-3.4h5.7v-6.7h5.7v-6.7h5.7v-3.4" pathLength="1" /></g>
+            <ellipse class="ld-shadow" cx="32" cy="57.5" rx="16" ry="3.2" fill="#000" filter="url(#b-sh)" />
+            <circle cx="32" cy="31" r="23" fill="url(#b-deep)" />
+            <g filter="url(#b-lit)"><g mask="url(#b-cut)"><circle cx="32" cy="31" r="23" fill="url(#b-skin)" /></g></g>
+            <g clip-path="url(#b-clip)"><path class="ld-charge" d="M20.5 41H26V35H32V29H38V23H43.5" pathLength="1" /></g>
           </svg>
         </div>
-        <div class="ld-word"><span>d</span><span>c</span><span>a</span><span>f</span></div>
+        <div class="ld-word"><span style="--i:0">d</span><span style="--i:1">c</span><span style="--i:2">a</span><span style="--i:3">i</span><span style="--i:4">n</span><span style="--i:5">n</span><span style="--i:6">e</span><span style="--i:7">a</span><span style="--i:8">r</span></div>
         <div class="ld-chain">
           <div class="ld-blocks"></div>
           <div class="ld-meta" id="ld-block">NEAR</div>
@@ -127,10 +127,9 @@
         // the intro plays once per session; reloads go straight to the page
         try { if (sessionStorage.getItem("dcaf-intro")) { boot.classList.add("skip"); window.__bootSkip = true; return; } } catch (e) {}
 
-        // 1. the pixel bean: cells inside the rotated ellipse, shaded toward a top-left light, crease cut in
+        // 1. the pixel coin: cells inside the circle, shaded toward a top-left light, staircase cut in
         var px = boot.querySelector(".ld-px"), N = 12, S = 132 / N, html = "";
-        var cos = Math.cos(32 * Math.PI / 180), sin = Math.sin(32 * Math.PI / 180);
-        var steps = [[23.4, 41.6], [23.4, 38.2], [29.1, 38.2], [29.1, 31.5], [34.8, 31.5], [34.8, 24.8], [40.5, 24.8], [40.5, 21.4]];
+        var steps = [[20.5, 41], [26, 41], [26, 35], [32, 35], [32, 29], [38, 29], [38, 23], [43.5, 23]];
         function segDist(x, y, a, b) {
           var dx = b[0] - a[0], dy = b[1] - a[1], t = Math.max(0, Math.min(1, ((x - a[0]) * dx + (y - a[1]) * dy) / (dx * dx + dy * dy || 1)));
           return Math.hypot(x - a[0] - t * dx, y - a[1] - t * dy);
@@ -138,8 +137,7 @@
         var shades = ["#9DFFD8", "#4DF7B9", "#00EC97", "#00CF84", "#00A86B", "#027A4E"];
         for (var r = 0; r < N; r++) for (var c = 0; c < N; c++) {
           var x = (c + 0.5) * 64 / N, y = (r + 0.5) * 64 / N, dx = x - 32, dy = y - 31;
-          var u = dx * cos + dy * sin, v = -dx * sin + dy * cos;
-          if ((u / 17.6) * (u / 17.6) + (v / 24) * (v / 24) > 1) continue;
+          if (Math.hypot(dx, dy) > 23.4) continue;
           var crease = false;
           for (var k = 0; k < steps.length - 1; k++) if (segDist(x, y, steps[k], steps[k + 1]) < 2.4) crease = true;
           var light = Math.hypot(x - 22, y - 16) / 46;
@@ -169,7 +167,7 @@
             .catch(function () { clearTimeout(to); head(i + 1); });
         })(0);
 
-        // 3. the exit wall: the screen as tiles that fold away from the bean
+        // 3. the exit wall: the screen as tiles that fold away from the coin
         window.__bootWall = function () {
           var wall = boot.querySelector(".ld-wall"), T = 72, W = innerWidth, H = innerHeight;
           var bean = boot.querySelector(".ld-bean").getBoundingClientRect();
