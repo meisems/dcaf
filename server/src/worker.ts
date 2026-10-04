@@ -48,7 +48,7 @@ export class EngineDO extends DurableObject<Env> {
         tx: (fn) => this.ctx.storage.transactionSync(fn),
       };
       this.db = makeDb(driver);
-      bindToken(this.db, CFG.token);
+      bindToken(this.db, CFG.token, CFG.resetId);
       this.engine = new Engine(this.db);
       this.reader = new Reader(this.db, this.engine);
       this.sink = {

@@ -80,6 +80,8 @@ function build(raw: EnvLike) {
     feeAccount,
     vaultKey,
     test,
+    // change to any new value to wipe the engine's stored data once (see bindToken)
+    resetId: e.RESET_ID || "",
     dryRun: test || e.DRY_RUN === "true" || !vaultKey,
     reserve: num(e.VAULT_RESERVE_NEAR, 0.5),
     startBlock: e.START_BLOCK ? Number(e.START_BLOCK) : null,
