@@ -1,6 +1,7 @@
 import type { PublicRules, RuleCheck, Rules, Status } from "./types.ts";
 
-export const DEFAULT_RULES: Rules = {
+/** Defaults for the game rules. The vault share is operator configuration and has no default. */
+export const DEFAULT_RULES: PublicRules = {
   roundMin: 10,
   roundMax: 15,
   minBuy: 0.1,
@@ -13,8 +14,6 @@ export const DEFAULT_RULES: Rules = {
   minPayout: 0.001,
   graceWindows: 0,
   minHolders: 15,
-  feeBps: 300,
-  vaultBps: 100,
 };
 
 export const weight = (streak: number, buy: number, r: PublicRules) =>

@@ -10,9 +10,9 @@ type WRow = {
 };
 
 const DAY = 86400;
-// the fee split is operator configuration, not part of the public API
+// the vault share is operator configuration, not part of the public API
 const publicRules = () => {
-  const { feeBps: _f, vaultBps: _v, ...rest } = CFG.rules;
+  const { vaultBps: _v, ...rest } = CFG.rules;
   return rest;
 };
 

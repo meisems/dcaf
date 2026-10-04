@@ -13,6 +13,7 @@ Object.assign(process.env, {
   MIN_BUY: "0.1",
   MIN_TOTAL: "1",
   MIN_HOLDERS: "3",
+  VAULT_BPS: "250",
 });
 
 const { initConfig } = await import("../src/config.ts");
@@ -24,6 +25,7 @@ type Swap = import("../src/indexer.ts").Swap;
 type Move = import("../src/indexer.ts").Move;
 
 const DEX = "v2.ref-finance.near";
+const RATE = 0.025; // VAULT_BPS above, as a fraction of volume
 const E18 = 10n ** 18n;
 const Y24 = 10n ** 24n;
 
@@ -90,15 +92,15 @@ test("streaks, top-N split, dropouts and golden rounds", () => {
   assert.equal(r.engine.current()?.no, 1);
   assert.equal(r.engine.pool(), 0, "history accrues nothing");
 
-  // window 1: alice, bob, carl buy. 1% of 3 NEAR → vault
+  // window 1: alice, bob, carl buy. RATE of 3 NEAR → vault
   r.tick(5);
   r.block([{ kind: "buy", w: "alice.near", near: 1 }, { kind: "buy", w: "bob.near", near: 1 }, { kind: "buy", w: "carl.near", near: 1 }]);
-  assert.ok(Math.abs(r.engine.pool() - 0.03) < 1e-9);
+  assert.ok(Math.abs(r.engine.pool() - 3 * RATE) < 1e-9);
   r.tick(600); // close #1
   let round = r.reader.round(1)!;
   assert.equal(round.qualifiers, 3);
   assert.equal(round.payouts.length, 2, "only the top 2 are paid");
-  assert.ok(Math.abs(round.paid - 0.03) < 1e-6, "top N split 100% between them");
+  assert.ok(Math.abs(round.paid - 3 * RATE) < 1e-6, "top N split 100% between them");
 
   // window 2: only alice buys, carl sells (out), dan buys but total < 1
   r.block([{ kind: "buy", w: "alice.near", near: 0.2 }, { kind: "sell", w: "carl.near", near: 0.5, tokens: 50 }, { kind: "buy", w: "dan.near", near: 0.2 }]);
@@ -128,7 +130,7 @@ test("streaks, top-N split, dropouts and golden rounds", () => {
   // accounting: everything accrued was either paid or is still in the pool
   const m = r.db.meta;
   assert.ok(Math.abs(m.num("accrued") - m.num("committed") - r.engine.pool()) < 1e-9);
-  assert.ok(Math.abs(m.num("accrued") - (0.03 + 0.002 + 0.005 + 0.002 + 0.005)) < 1e-9);
+  assert.ok(Math.abs(m.num("accrued") - (3 + 0.2 + 0.5 + 0.2 + 0.5) * RATE) < 1e-9);
 });
 
 test("snapshot shape", () => {

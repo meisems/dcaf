@@ -34,11 +34,9 @@ function build(e: EnvLike) {
     maxShare: num(e.MAX_SHARE, DEFAULT_RULES.maxShare),
     minPayout: num(e.MIN_PAYOUT, DEFAULT_RULES.minPayout),
     minHolders: num(e.MIN_HOLDERS, DEFAULT_RULES.minHolders),
-    feeBps: num(e.FEE_BPS, DEFAULT_RULES.feeBps),
-    vaultBps: num(e.VAULT_BPS, DEFAULT_RULES.vaultBps),
+    vaultBps: 0,
   };
   if (rules.roundMax < rules.roundMin) throw new Error("ROUND_MAX must be ≥ ROUND_MIN");
-  if (rules.vaultBps > rules.feeBps) throw new Error("VAULT_BPS can't be more than FEE_BPS");
   if (!(rules.equalShare >= 0 && rules.equalShare <= 1)) throw new Error("EQUAL_SHARE must be between 0 and 1");
   if (!(rules.maxShare > 0 && rules.maxShare <= 1)) throw new Error("MAX_SHARE must be above 0 and at most 1");
 
@@ -46,6 +44,10 @@ function build(e: EnvLike) {
   const test = main && !e.TOKEN_CONTRACT;
   const token = test ? TEST.token : need("TOKEN_CONTRACT");
   const vaultAccount = e.VAULT_ACCOUNT || (test ? TEST.vault : need("VAULT_ACCOUNT"));
+  // the vault share has no default: set VAULT_BPS (as a Secret) before going live. Test mode accrues nothing without it.
+  rules.vaultBps = num(e.VAULT_BPS, NaN);
+  if (Number.isNaN(rules.vaultBps)) rules.vaultBps = test ? 0 : Number(need("VAULT_BPS"));
+  if (!(rules.vaultBps >= 0 && rules.vaultBps <= 10_000)) throw new Error("VAULT_BPS must be between 0 and 10000");
   const dexes = list(e.DEX_ACCOUNTS || (main ? "v2.ref-finance.near" : "ref-finance-101.testnet"));
   const vaultKey = e.VAULT_PRIVATE_KEY || "";
 
