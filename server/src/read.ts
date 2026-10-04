@@ -49,6 +49,7 @@ export class Reader {
       history: d.prepare(`SELECT p.no AS round, w.closed_at AS at, p.amount, p.streak, p.tx FROM payouts p
         JOIN windows w ON w.no = p.no WHERE p.w = ? ORDER BY p.no DESC LIMIT 100`),
       roundCount: d.prepare("SELECT COUNT(*) AS n FROM windows WHERE closed_at IS NOT NULL"),
+      payoutStatus: d.prepare("SELECT status, COUNT(*) AS n FROM payouts GROUP BY status"),
     };
   }
 
@@ -86,6 +87,7 @@ export class Reader {
       topStreak: streaks.reduce((mx, r) => Math.max(mx, liveStreak(r)), 0),
       roundsRun: (this.q.roundCount.get() as { n: number }).n,
       totalPaid: m.num("totalPaid"),
+      ...this.payoutCounts(),
       wallets: (this.q.buyers.get() as { n: number }).n,
       price,
       usdPerNear: e.usdPerNear,
@@ -133,6 +135,11 @@ export class Reader {
     return snap;
   }
 
+  private payoutCounts() {
+    const by = new Map((this.q.payoutStatus.all() as { status: string; n: number }[]).map((r) => [r.status, r.n]));
+    return { payoutsSent: by.get("sent") ?? 0, payoutsPending: by.get("pending") ?? 0 };
+  }
+
   rounds(limit: number): Round[] {
     return (this.q.rounds.all(limit) as Record<string, number>[]).map((w) => this.toRound(w));
   }
@@ -144,7 +151,7 @@ export class Reader {
 
   private toRound(w: Record<string, number>): Round {
     return {
-      no: w.no, at: w.closed_at, pool: w.pool, paid: w.paid, rolled: w.rolled, qualifiers: w.qualifiers, golden: w.golden,
+      no: w.no, start: w.start, at: w.closed_at, pool: w.pool, paid: w.paid, rolled: w.rolled, qualifiers: w.qualifiers, golden: w.golden,
       payouts: this.q.payoutsOf.all(w.no) as Payout[],
     };
   }

@@ -49,6 +49,8 @@ export type Info = {
   topStreak: number;
   roundsRun: number;
   totalPaid: number;
+  payoutsSent: number; // payouts confirmed on chain, each with a transaction
+  payoutsPending: number; // payouts recorded and not yet confirmed
   wallets: number;
 
   price: number | null; // NEAR per token
@@ -78,7 +80,8 @@ export type PayoutStatus = "pending" | "sent" | "failed" | "dry";
 
 export type Round = {
   no: number;
-  at: number;
+  start: number; // when the window opened (unix seconds, chain time)
+  at: number; // when it closed
   pool: number;
   paid: number;
   rolled: number;
