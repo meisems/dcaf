@@ -264,6 +264,10 @@ kbd { font: 500 11px var(--mono); padding: 2px 6px; border-radius: 6px; backgrou
 .hero { display: grid; grid-template-columns: 1.05fr .95fr; gap: 30px; align-items: center; min-height: min(740px, calc(100vh - 110px)); padding: 10px 0 24px; }
 .hero-copy { display: grid; justify-items: start; gap: 22px; }
 .hero h1 { font-size: clamp(50px, 8.2vw, 118px); line-height: .92; letter-spacing: -0.055em; font-weight: 800; }
+/* size the headline to its column so "No jitters." always stays on one line */
+.hero-copy { container-type: inline-size; }
+.hero h1 { font-size: min(16.8cqi, 112px); line-height: .94; }
+.hero h1 .grad-text { white-space: nowrap; padding-right: .08em; margin-right: -.08em; }
 .lead { font-size: clamp(16px, 1.5vw, 19px); color: var(--ink-2); max-width: 34ch; }
 .cta { display: flex; gap: 10px; flex-wrap: wrap; }
 .ready .hero-copy > *, .ready .hero-orbit { animation: rise .95s cubic-bezier(.2, .85, .25, 1) both; }
@@ -611,7 +615,7 @@ kbd { font: 500 11px var(--mono); padding: 2px 6px; border-radius: 6px; backgrou
   .acct-id { max-width: 96px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .nav-right .btn-sm span { display: none; }
   .nav-right .btn-sm { width: 38px; padding: 0; }
-  .hero h1 { font-size: clamp(44px, 15vw, 72px); }
+  .hero h1 { font-size: min(16.8cqi, 72px); }
   .cta { width: 100%; }
   .cta .btn { flex: 1; }
   .orbit-card { min-height: 0; padding: 18px; border-radius: 28px; }
