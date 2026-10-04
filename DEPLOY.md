@@ -22,6 +22,8 @@ Two Cloudflare projects, both built straight from this GitHub repo. No CLI neede
 3. **Deploy.** The Durable Object, its SQLite storage and the 1-minute cron are created from `server/wrangler.jsonc`.
 4. **dcaf (Worker) → Settings → Variables and Secrets → Add**:
 
+   The full list, with where to get each value, is in [`server/.env.example`](server/.env.example) (the website's is in [`.env.example`](.env.example)). A value written as `<something>` is a placeholder and counts as not set, so you can add everything now and fill in real values later.
+
 | Name | Type | Example |
 |---|---|---|
 | `TOKEN_CONTRACT` | Text | `dcainnear.tkn.near` |
@@ -54,9 +56,8 @@ Claim fees into `FEE_ACCOUNT` (the vault by default). On each claim the engine c
 
 ### RPC endpoints
 
-- **Reads** (balances, metadata, price, block height) go to public endpoints, fastest healthy one first. An endpoint that errors, times out or rate-limits is skipped and cooled off (5 s, doubling up to 5 min). Built in, all verified for `block`, view calls and `send_tx`:
+- **Reads** (balances, metadata, price, block height) go to your private endpoints first (`LAVA_RPC_URL`, `DRPC_RPC_URL`, `PRIVATE_RPC_URLS`; fastest healthy one first), and fall back to the public NEAR endpoints. An endpoint that errors, times out or rate-limits is skipped and cooled off (5 s, doubling up to 5 min). Built-in public fallbacks, all verified for `block`, view calls and `send_tx`:
   `free.rpc.fastnear.com`, `rpc.mainnet.fastnear.com`, `near.drpc.org`, `rpc.shitzuapes.xyz`, `rpc.intea.rs`, `near-mainnet.gateway.tatum.io`, `archival-rpc.mainnet.fastnear.com`, `rpc.mainnet.near.org`.
-  Your private endpoints are the last resort for reads, so they're only used when every public one fails.
 - **Transactions** (payouts) go to `LAVA_RPC_URL` first, then `DRPC_RPC_URL`, then `PRIVATE_RPC_URLS` in order. If all of them are down, the already-signed payout is broadcast through the public endpoints (set `TX_PUBLIC_FALLBACK` = `false` to forbid that).
 - Every payout is signed once and stored before it is sent. A timeout or a switch to another RPC re-sends or looks up that same transaction, so a wallet is never paid twice.
 - `RPC_URLS` (Text, comma separated) replaces the public list. `RPC_URL` adds one endpoint in front of it.

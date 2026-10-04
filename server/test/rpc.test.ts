@@ -59,8 +59,8 @@ test("reads fail over past dead and rate-limited endpoints, and stop on real ans
   assert.equal(calls.length, 1);
 });
 
-test("pools: public first for reads, Lava first for transactions, keys never leak", async () => {
-  assert.deepEqual(reads().order().map((e) => e.host), ["pub-a.test", "pub-b.test", "lava.test", "drpc.test"]);
+test("pools: private first with public fallback for reads, Lava first for transactions, keys never leak", async () => {
+  assert.deepEqual(reads().order().map((e) => e.host), ["lava.test", "drpc.test", "pub-a.test", "pub-b.test"]);
   assert.deepEqual(txs().order().map((e) => e.host), ["lava.test", "drpc.test", "pub-a.test", "pub-b.test"]);
   // transactions keep Lava first even when another endpoint is faster
   txs().eps[1].ms = 1;

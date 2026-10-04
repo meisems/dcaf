@@ -1,6 +1,9 @@
 // Brand + chain settings. A rename or a new token is a one-file change (plus .env).
 
-const env = import.meta.env;
+// a value written as <something> is a placeholder: treated as not set
+const env = Object.fromEntries(
+  Object.entries(import.meta.env).map(([k, v]) => [k, typeof v === "string" && /^<[^>]*>$/.test(v.trim()) ? undefined : v]),
+) as ImportMetaEnv;
 
 export const BRAND = {
   name: "dcainnear",

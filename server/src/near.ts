@@ -13,11 +13,11 @@ export const authFor = (host: string): Record<string, string> =>
 let readPool: RpcPool | null = null;
 let txPool: RpcPool | null = null;
 
-/** Reads: public endpoints by speed, private ones as the last resort. */
+/** Reads: private endpoints by speed, the public NEAR endpoints as the fallback. */
 export function reads() {
   return (readPool ??= new RpcPool("reads", [
-    ...CFG.rpcRead.map((u, i) => endpoint(u, false, i)),
     ...CFG.rpcPrivate.map((u, i) => endpoint(u, true, i)),
+    ...CFG.rpcRead.map((u, i) => endpoint(u, false, i)),
   ], authFor));
 }
 
