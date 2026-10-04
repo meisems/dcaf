@@ -70,7 +70,7 @@ export default function Board() {
           )}
         </div>
         {rows.length === 0 ? (
-          <Empty title={tab === "next" ? "No one in this window" : "Nothing yet"} hint={tab === "next" ? "Be the first buy" : undefined} />
+          <Empty title={tab === "allTime" ? "Nothing yet" : "No one has bought this window"} hint={tab === "allTime" ? undefined : "Be the first buy"} />
         ) : (
           <div className="table-scroll">
             <table className="tbl board">
