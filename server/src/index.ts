@@ -15,7 +15,7 @@ if (existsSync(".env")) process.loadEnvFile(".env");
 initConfig(process.env);
 
 const db = openNodeDb(CFG.db);
-bindToken(db, CFG.token);
+bindToken(db, CFG.token, CFG.resetId);
 const engine = new Engine(db);
 const reader = new Reader(db, engine);
 let stopping = false;

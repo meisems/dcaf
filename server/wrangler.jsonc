@@ -36,7 +36,9 @@
     "TOP_N": "0",
     "EQUAL_SHARE": "0.5",
     "MAX_SHARE": "0.25",
-    "MIN_PAYOUT": "0.001"
+    "MIN_PAYOUT": "0.001",
+    // change to any new value and deploy to wipe the engine's data once and start over
+    "RESET_ID": "2026-10-05-test-reset"
   },
   "durable_objects": {
     "bindings": [{ "name": "ENGINE", "class_name": "EngineDO" }]

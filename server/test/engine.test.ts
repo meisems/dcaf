@@ -164,6 +164,14 @@ test("switching the token wipes the old token's state", async () => {
   assert.equal(r.reader.wallet("alice.near").known, false);
   assert.equal(r.db.meta.get("done"), undefined);
   assert.equal(r.db.meta.get("token"), "real.near");
+
+  // a new RESET_ID wipes once; the same one again keeps everything
+  r.block([{ kind: "buy", w: "bob.near", near: 2 }]);
+  bindToken(r.db, "real.near", "r1");
+  assert.equal(r.reader.wallet("bob.near").known, false, "a new reset id starts over");
+  r.block([{ kind: "buy", w: "carl.near", near: 2 }]);
+  bindToken(r.db, "real.near", "r1");
+  assert.equal(r.reader.wallet("carl.near").known, true, "the same reset id never wipes again");
 });
 
 test("fees: only new NEAR or wNEAR arriving at the fee wallet counts", async () => {

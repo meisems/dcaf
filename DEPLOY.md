@@ -50,6 +50,8 @@ Two Cloudflare projects, both built straight from this GitHub repo. No CLI neede
    Saving deploys a new version. `keep_vars` in `wrangler.jsonc` keeps these on every future Git deploy.
 5. Check `https://dcaf.<your-subdomain>.workers.dev/api/health`. `started: true` means it is live; until the token has `MIN_HOLDERS` holders the engine indexes but no window opens.
 
+**Starting over:** set `RESET_ID` in `server/wrangler.jsonc` to any new value and push. On the next start the engine wipes its stored data once (trades, wallets, rounds, payouts) and begins again from the chain head. Leaving it unchanged never wipes anything. Changing `TOKEN_CONTRACT` also starts over.
+
 The rewards share is never published: it isn't in the code, and `/api/snapshot` omits it.
 
 ### Fees
