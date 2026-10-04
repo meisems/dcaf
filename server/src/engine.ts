@@ -30,6 +30,8 @@ export class Engine {
     this.db = db;
     this.lastBlockT = db.meta.num("lastT");
     this.lastHeight = db.meta.num("done");
+    // start from the last traded price, so a restart doesn't value the next trades at 0
+    this.price = (db.prepare("SELECT p FROM trades WHERE q > 0 AND p > 0 ORDER BY id DESC LIMIT 1").get() as { p: number } | undefined)?.p ?? null;
     const d = db;
     this.q = {
       win: d.prepare("SELECT no, start, close_at FROM windows WHERE closed_at IS NULL ORDER BY no DESC LIMIT 1"),
