@@ -9,6 +9,7 @@ import { acct, near, usd, payout, pct } from "../lib/format";
 import { useMe } from "../lib/me";
 import { disableReminders, enableReminders, useReminders } from "../lib/remind";
 import { useFlip } from "../lib/flip";
+import { PayoutFeed } from "../components/Payouts";
 
 export default function Home() {
   const { snap } = useLive();
@@ -88,6 +89,14 @@ export default function Home() {
           )}
         </Card>
       </section>
+
+      {snap && (
+        <section data-reveal>
+          <Card title="Recent payouts" action={<More to="/rounds">All proof</More>}>
+            <PayoutFeed snap={snap} limit={8} ago />
+          </Card>
+        </section>
+      )}
     </>
   );
 }

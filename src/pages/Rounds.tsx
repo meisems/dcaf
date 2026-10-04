@@ -5,6 +5,7 @@ import { Ago, AppLink, Avatar, Card, Empty, PageHead, Streak } from "../componen
 import { getRound, peekRound, useLive, type Round, type Snapshot } from "../lib/api";
 import { acct, clock, dateTime, near, usd } from "../lib/format";
 import { usePageName } from "../lib/hooks";
+import { PayoutFeed, recentPayouts } from "../components/Payouts";
 
 export default function Rounds() {
   usePageName("Rounds");
@@ -147,7 +148,6 @@ function RoundProof({ r }: { r: Round }) {
 /** The receipts: totals, the vault anyone can audit, and the latest transfers with their transactions. */
 function Proof({ snap }: { snap: Snapshot }) {
   const i = snap.info;
-  const latest = snap.rounds.flatMap((r) => r.payouts.filter((p) => p.tx).map((p) => ({ ...p, no: r.no, at: r.at }))).slice(0, 6);
   return (
     <section className="card proof">
       <div className="proof-head">
@@ -166,18 +166,7 @@ function Proof({ snap }: { snap: Snapshot }) {
         <div className="kpi"><small>On-chain transfers</small><span className="kpi-v">{i.payoutsSent}</span><span className="kpi-s">each with a transaction</span></div>
         <div className="kpi"><small>Sending</small><span className="kpi-v">{i.payoutsPending}</span><span className="kpi-s">{i.payoutsPending ? "confirming now" : "nothing waiting"}</span></div>
       </div>
-      {latest.length > 0 && (
-        <ul className="feed">
-          {latest.map((p) => (
-            <li key={`${p.no}-${p.w}`}>
-              <AppLink to={`/rounds/${p.no}`} className="muted mono">#{p.no}</AppLink>
-              <AppLink to={`/wallet/${p.w}`} className="who"><Avatar id={p.w} size={20} /><span className="mono">{acct(p.w, 20)}</span></AppLink>
-              <b>{near(p.amount)}</b>
-              <a className="link mono" href={LINKS.tx(p.tx!)} target="_blank" rel="noreferrer">{p.tx!.slice(0, 6)}… ↗</a>
-            </li>
-          ))}
-        </ul>
-      )}
+      {recentPayouts(snap, 1).length > 0 && <PayoutFeed snap={snap} />}
     </section>
   );
 }
