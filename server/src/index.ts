@@ -23,8 +23,8 @@ let stopping = false;
 console.log(`dcainnear engine (local) · ${CFG.network} · token ${CFG.token} · vault ${CFG.vaultAccount}${CFG.dryRun ? " · DRY RUN" : ""}`);
 
 await loadToken(engine, db);
-void refreshMarket(engine);
-setInterval(() => void refreshMarket(engine), 5000);
+void refreshMarket(engine, db);
+setInterval(() => void refreshMarket(engine, db), 5000);
 startApi(reader, engine);
 
 const start = CFG.startBlock ?? (await finalHeight());

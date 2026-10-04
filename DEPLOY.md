@@ -32,7 +32,7 @@ Two Cloudflare projects, both built straight from this GitHub repo. No CLI neede
 | `TOKEN_SYMBOL` | Text | `DCA` |
 | `VAULT_ACCOUNT` | Text | `vault.dcainnear.near` |
 | `START_BLOCK` | Text | launch block height |
-| `REF_POOL_ID` | Text | TOKEN/wNEAR pool id on Rhea |
+| `REF_POOL_ID` | Text | optional: TOKEN/wNEAR pool id on Rhea for the spot price. Found automatically (the deepest classic pool) when not set. |
 | `TOP_N` | Text | `0` (everyone who qualifies is paid; a number pays only the top N) |
 | `EQUAL_SHARE` | Text | `0.5` (part of each round split equally; the rest goes by weight) |
 | `MAX_SHARE` | Text | `0.25` (most of a round one wallet can take) |
