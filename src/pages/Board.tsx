@@ -2,7 +2,7 @@ import { Fragment, useState } from "react";
 
 import { AppLink, Avatar, Empty, PageHead, StatusPill, Streak } from "../components/ui";
 import { useLive, type BoardRow, paidCount } from "../lib/api";
-import { acct, near, pct } from "../lib/format";
+import { acct, near, pct, payout } from "../lib/format";
 import { Search } from "../components/Icons";
 import { useFlip } from "../lib/flip";
 import { useMe } from "../lib/me";
@@ -50,7 +50,7 @@ export default function Board() {
               <span className={`medal m${k + 1}`}>{k + 1}</span>
               <Avatar id={r.id} size={40} />
               <span className="mono">{acct(r.id, 16)}</span>
-              <b>{near(r.est)}</b>
+              <b>{payout(r.est, r.share, snap.info.pool)}</b>
               <Streak n={r.liveStreak} />
             </AppLink>
           ))}
@@ -79,7 +79,7 @@ export default function Board() {
                   <th className="rank">#</th><th>Wallet</th><th>Streak</th>
                   <th className="hide-sm">{tab === "allTime" ? "Bought" : "Window"}</th>
                   <th className="bar-col hide-sm">{tab === "next" ? "Share" : tab === "streaks" ? "Status" : "Share"}</th>
-                  <th className="r">{tab === "allTime" ? "Earned" : "Est."}</th>
+                  <th className="r">{tab === "allTime" ? "Earned" : snap.info.pool > 0 ? "Est." : "Share"}</th>
                 </tr>
               </thead>
               <tbody ref={body}>
@@ -101,7 +101,7 @@ export default function Board() {
                           <div className="sbar"><i style={{ width: `${Math.max(3, (metric(tab, r) / max) * 100)}%` }} />{tab === "next" && <span>{pct(r.share)}</span>}</div>
                         )}
                       </td>
-                      <td className="r"><b>{near(tab === "allTime" ? r.earned : r.est)}</b></td>
+                      <td className="r"><b>{tab === "allTime" ? near(r.earned) : payout(r.est, r.share, snap.info.pool)}</b></td>
                     </tr>
                   </Fragment>
                 ))}

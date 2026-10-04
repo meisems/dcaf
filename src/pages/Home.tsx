@@ -5,7 +5,7 @@ import { Orbit } from "../components/Orbit";
 import { memo } from "react";
 import { Ago, AppLink, Avatar, Card, Empty, Left, More, Num, StatusPill, Streak, useUi } from "../components/ui";
 import { useLive, type Snapshot, paidCount } from "../lib/api";
-import { acct, near, usd } from "../lib/format";
+import { acct, near, usd, payout, pct } from "../lib/format";
 import { useMe } from "../lib/me";
 import { disableReminders, enableReminders, useReminders } from "../lib/remind";
 import { useFlip } from "../lib/flip";
@@ -63,7 +63,7 @@ export default function Home() {
                   <span className={`medal m${k + 1}`}>{k + 1}</span>
                   <AppLink to={`/wallet/${r.id}`} className="who"><Avatar id={r.id} size={24} /><span className="mono">{acct(r.id, 18)}</span></AppLink>
                   <Streak n={r.liveStreak} />
-                  <b className="r">{near(r.est)}</b>
+                  <b className="r">{payout(r.est, r.share, snap.info.pool)}</b>
                 </li>
               ))}
             </ol>
@@ -108,7 +108,7 @@ function MeStrip({ snap }: { snap: Snapshot }) {
   const topN = paidCount(i.rules);
   const msg =
     mine.status === "dcaing"
-      ? mine.rank !== null && mine.rank <= topN ? <>#{mine.rank} · <b>≈ {near(mine.est)}</b></> : <>#{mine.rank} · outside top {topN}</>
+      ? mine.rank !== null && mine.rank <= topN ? <>#{mine.rank} · <b>{i.pool > 0 ? `≈ ${near(mine.est)}` : `${pct(mine.share)} of the pool`}</b></> : <>#{mine.rank} · outside top {topN}</>
       : mine.status === "waiting" ? <>Buy within <b className="mono"><Left at={i.nextRoundAt} /></b></>
       : mine.status === "notyet" ? <>{near(i.rules.minTotal - mine.total)} more to count</>
       : mine.status === "out" ? <>Out for good</>

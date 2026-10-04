@@ -38,7 +38,7 @@ export function WalletCard({ rep, snap, mine }: { rep: WalletReport; snap: Snaps
     switch (rep.status) {
       case "dcaing":
         return inTop
-          ? { h: `#${rep.rank} in round ${info.windowNo}`, s: `≈ ${near(rep.est)} · ${pct(rep.share)} of the vault` }
+          ? { h: `#${rep.rank} in round ${info.windowNo}`, s: info.pool > 0 ? `≈ ${near(rep.est)} · ${pct(rep.share)} of the vault` : `${pct(rep.share)} of the pool` }
           : { h: `#${rep.rank} · outside top ${R.topN}`, s: "Buy more or keep the streak to climb" };
       case "waiting":
         return { h: "Streak at risk", s: <>Buy within <Left at={info.nextRoundAt} /></> };
