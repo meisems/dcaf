@@ -89,7 +89,7 @@ export class EngineDO extends DurableObject<Env> {
     const t0 = Date.now();
     let state: "behind" | "live" | "idle" = "idle";
     try {
-      await refreshMarket(this.engine);
+      await refreshMarket(this.engine, this.db);
       do state = await indexPass(this.db, this.sink, this.start, this.seen);
       while (state === "behind" && Date.now() - t0 < 20_000);
       await sendPayouts(this.db, 8000);
