@@ -183,3 +183,27 @@ test("fees: only new NEAR or wNEAR arriving at the fee wallet counts", async () 
   assert.equal(feeIn(o(wnear("launchpad.near")), undefined, fee), 7n, "a wNEAR claim");
   assert.equal(feeIn(o(wnear(fee)), undefined, fee), 0n);
 });
+
+test("old plain-text token logs are read, and refunds net out the transfer they undo", async () => {
+  const { nep141, movesOf, refundsOf } = await import("../src/indexer.ts");
+  assert.deepEqual(nep141(["Transfer 5 from a.near to b.near"]), [{ kind: "transfer", from: "a.near", to: "b.near", amount: "5" }]);
+  assert.equal(nep141(["Refund 5 from b.near to a.near"])[0].kind, "refund");
+  const both = [`EVENT_JSON:${JSON.stringify({ standard: "nep141", event: "ft_transfer", data: [{ old_owner_id: "a.near", new_owner_id: "b.near", amount: "5" }] })}`, "Transfer 5 from a.near to b.near"];
+  assert.equal(nep141(both).length, 1, "events win over plain text, nothing counted twice");
+
+  const out = (logs: string[]) => ({ block_height: 1, block_timestamp: 0, index: 0, id: "r", outcome: { executor_id: "dcainnear.tkn.near", logs, status: { SuccessValue: "" } as Record<string, unknown> } });
+  const sell = out([`Transfer 100 from carl.near to ${DEX}`]);
+  const back = out([`Refund 100 from ${DEX} to carl.near`]);
+  const refunds = new Map<string, bigint>();
+  refundsOf("t1", back, refunds);
+  assert.deepEqual(movesOf(sell, "t1", refunds), [], "a fully refunded (failed) sell is not a sell");
+  assert.deepEqual(movesOf(back, "t1", refunds), [], "and the refund is not a buy");
+
+  const part = new Map<string, bigint>();
+  refundsOf("t2", out([`Refund 30 from ${DEX} to carl.near`]), part);
+  const m = movesOf(out([`Transfer 100 from carl.near to ${DEX}`]), "t2", part);
+  assert.equal(m.length, 1);
+  assert.equal(m[0].kind, "sell");
+  assert.equal(m[0].raw, "70", "only the part that was really sold");
+  assert.equal(movesOf(out([`Transfer 100 from ${DEX} to dan.near`]), "t3")[0].kind, "buy");
+});

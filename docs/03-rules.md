@@ -27,6 +27,7 @@ A wallet is paid in a round if **all** of these are true when the window closes:
 | wallet → DEX | sell |
 | wallet → another wallet | the sender is **out** |
 | burn | the owner is **out** |
+| a sell or transfer that fails and is refunded | nothing: only what actually left the wallet counts |
 
 The token contract, DEX contracts, the vault and any excluded account never count.
 

@@ -58,38 +58,85 @@ function swapsOf(tx: RawTx): Swap {
   return s;
 }
 
-/** Token events in one receipt, classified. */
-function movesOf(o: Outcome, tx: string): Move[] {
+/** A NEP-141 balance change, from either the NEP-297 events or the older plain-text logs. */
+type Ev = { kind: "transfer" | "refund" | "burn" | "mint"; from: string; to: string; amount: string };
+
+const LEGACY = /^(Transfer|Refund) (\d+) from (\S+) to (\S+)/;
+
+/**
+ * NEP-141 changes in one receipt's logs. Contracts built on newer SDKs log `EVENT_JSON` events;
+ * older ones (wNEAR, REF, tkn.near tokens…) log "Transfer 5 from a to b" / "Refund 5 from b to a".
+ * If a receipt has events, the plain-text lines are ignored so nothing is counted twice.
+ * A refund is the unused part of an ft_transfer_call coming back to its sender.
+ */
+export function nep141(logs: string[]): Ev[] {
+  const events: Ev[] = [];
+  const legacy: Ev[] = [];
+  for (const log of logs) {
+    if (log.startsWith("EVENT_JSON:")) {
+      let ev: { standard?: string; event?: string; data?: Record<string, string>[] };
+      try {
+        ev = JSON.parse(log.slice(11));
+      } catch {
+        continue;
+      }
+      if (ev.standard !== "nep141" || !Array.isArray(ev.data)) continue;
+      for (const d of ev.data) {
+        if (ev.event === "ft_transfer") events.push({ kind: d.memo === "refund" ? "refund" : "transfer", from: d.old_owner_id, to: d.new_owner_id, amount: d.amount });
+        else if (ev.event === "ft_burn") events.push({ kind: "burn", from: d.owner_id, to: "", amount: d.amount });
+        else if (ev.event === "ft_mint") events.push({ kind: "mint", from: "", to: d.owner_id, amount: d.amount });
+      }
+    } else {
+      const m = LEGACY.exec(log);
+      if (m) legacy.push({ kind: m[1] === "Refund" ? "refund" : "transfer", from: m[3], to: m[4], amount: m[2] });
+    }
+  }
+  return events.length ? events : legacy;
+}
+
+/** Refunded amounts per transaction, keyed by the original direction: tx|from|to (from = who sent first). */
+export type Refunds = Map<string, bigint>;
+
+export function refundsOf(tx: string, o: Outcome, into: Refunds) {
+  if (o.outcome.executor_id !== CFG.token || "Failure" in o.outcome.status) return;
+  for (const e of nep141(o.outcome.logs)) {
+    if (e.kind !== "refund") continue;
+    const k = `${tx}|${e.to}|${e.from}`; // a refund goes back the other way
+    into.set(k, (into.get(k) ?? 0n) + BigInt(e.amount));
+  }
+}
+
+/** Token events in one receipt, classified. Refunded amounts are netted out of the transfer they undo. */
+export function movesOf(o: Outcome, tx: string, refunds: Refunds = new Map()): Move[] {
   const out = o.outcome;
   if (out.executor_id !== CFG.token || "Failure" in out.status) return [];
   const moves: Move[] = [];
   let idx = 0;
-  for (const log of out.logs) {
-    if (!log.startsWith("EVENT_JSON:")) continue;
-    let ev: { standard?: string; event?: string; data?: Record<string, string>[] };
-    try {
-      ev = JSON.parse(log.slice(11));
-    } catch {
-      continue;
-    }
-    if (ev.standard !== "nep141" || !Array.isArray(ev.data)) continue;
-    for (const d of ev.data) {
-      const push = (kind: Move["kind"], w: string) => moves.push({ kind, w, raw: d.amount, tx, receipt: o.id, idx: idx++ });
-      if (ev.event === "ft_transfer") {
-        const from = d.old_owner_id;
-        const to = d.new_owner_id;
-        if (isDex(from) && isDex(to)) continue;
-        if (isDex(from)) counts(to) && push("buy", to);
-        else if (isDex(to)) counts(from) && push("sell", from);
-        else {
-          if (counts(from)) push("move", from);
-          if (counts(to)) push("recv", to);
-        }
-      } else if (ev.event === "ft_burn") {
-        if (counts(d.owner_id)) push("move", d.owner_id);
-      } else if (ev.event === "ft_mint") {
-        if (counts(d.owner_id)) push("recv", d.owner_id);
+  for (const e of nep141(out.logs)) {
+    const push = (kind: Move["kind"], w: string, raw: bigint) => moves.push({ kind, w, raw: raw.toString(), tx, receipt: o.id, idx: idx++ });
+    if (e.kind === "refund") continue;
+    let amt = BigInt(e.amount);
+    if (e.kind === "transfer") {
+      const k = `${tx}|${e.from}|${e.to}`;
+      const back = refunds.get(k) ?? 0n;
+      if (back > 0n) {
+        const cut = back < amt ? back : amt;
+        refunds.set(k, back - cut);
+        amt -= cut;
       }
+      if (amt <= 0n) continue;
+      const { from, to } = e;
+      if (isDex(from) && isDex(to)) continue;
+      if (isDex(from)) counts(to) && push("buy", to, amt);
+      else if (isDex(to)) counts(from) && push("sell", from, amt);
+      else {
+        if (counts(from)) push("move", from, amt);
+        if (counts(to)) push("recv", to, amt);
+      }
+    } else if (e.kind === "burn") {
+      if (counts(e.from)) push("move", e.from, amt);
+    } else if (e.kind === "mint") {
+      if (counts(e.to)) push("recv", e.to, amt);
     }
   }
   return moves;
@@ -110,18 +157,8 @@ export function feeIn(o: Outcome, r: Receipt | undefined, fee: string): bigint {
       if (d) y += BigInt(d);
     }
   }
-  if (o.outcome.executor_id === CFG.wrap) {
-    for (const log of o.outcome.logs) {
-      if (!log.startsWith("EVENT_JSON:")) continue;
-      try {
-        const ev = JSON.parse(log.slice(11)) as { standard?: string; event?: string; data?: Record<string, string>[] };
-        if (ev.standard !== "nep141" || ev.event !== "ft_transfer" || !Array.isArray(ev.data)) continue;
-        for (const d of ev.data) if (d.new_owner_id === fee && d.old_owner_id !== fee) y += BigInt(d.amount);
-      } catch {
-        /* not an event */
-      }
-    }
-  }
+  if (o.outcome.executor_id === CFG.wrap)
+    for (const e of nep141(o.outcome.logs)) if (e.kind === "transfer" && e.to === fee && e.from !== fee) y += BigInt(e.amount);
   return y;
 }
 
@@ -192,6 +229,9 @@ export async function indexPass(db: Db, sink: Sink, start: number, seen: Seen): 
     }
   }
   items.sort((a, b) => a.o.block_height - b.o.block_height || a.o.index - b.o.index);
+  // refunds net out the transfer they undo (a failed sell is not a sell)
+  const refunds: Refunds = new Map();
+  for (const { o, tx } of items) refundsOf(tx, o, refunds);
 
   let cur: ParsedBlock | null = null;
   const flush = () => cur && (cur.moves.length || cur.fees) && sink.onBlock(cur, swaps);
@@ -200,7 +240,7 @@ export async function indexPass(db: Db, sink: Sink, start: number, seen: Seen): 
       flush();
       cur = { height: o.block_height, t: nsToS(o.block_timestamp), moves: [], fees: 0n };
     }
-    cur.moves.push(...movesOf(o, tx));
+    cur.moves.push(...movesOf(o, tx, refunds));
     cur.fees = (cur.fees ?? 0n) + feeIn(o, r, CFG.feeAccount);
   }
   flush();
