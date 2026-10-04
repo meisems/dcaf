@@ -11,10 +11,13 @@ export type EnvLike = Record<string, string | undefined>;
 /** Stand-ins used until the real token is configured: an active token, a vault that never pays. */
 const TEST = { token: "token.rhealab.near", symbol: "RHEA", vault: "dcainnear-test-vault.near", pool: null };
 
-const list = (v: string | undefined) => (v ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+/** A value written as <something> is a placeholder: treated exactly as if the setting were not there. */
+const isPlaceholder = (v: string) => /^<[^>]*>$/.test(v.trim());
+const list = (v: string | undefined) => (v ?? "").split(",").map((s) => s.trim()).filter((s) => s && !isPlaceholder(s));
 const num = (v: string | undefined, d: number) => (v !== undefined && v !== "" && Number.isFinite(+v) ? +v : d);
 
-function build(e: EnvLike) {
+function build(raw: EnvLike) {
+  const e: EnvLike = Object.fromEntries(Object.entries(raw).map(([k, v]) => [k, v === undefined || isPlaceholder(v) ? undefined : v]));
   const need = (k: string) => {
     const v = e[k];
     if (!v) throw new Error(`Missing ${k}. Add it in the Worker's Settings → Variables and Secrets.`);

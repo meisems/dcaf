@@ -16,6 +16,7 @@ const DEFAULT_ENGINE_URL = "https://dcaf.laidev.workers.dev";
 export const onRequest = async ({ request, env }: { request: Request; env: Env }): Promise<Response> => {
   if (env.ENGINE) return env.ENGINE.fetch(request);
   const url = new URL(request.url);
-  const target = (env.ENGINE_URL || DEFAULT_ENGINE_URL).replace(/\/$/, "") + url.pathname + url.search;
+  const set = env.ENGINE_URL && !/^<[^>]*>$/.test(env.ENGINE_URL.trim()) ? env.ENGINE_URL : DEFAULT_ENGINE_URL; // <…> is a placeholder
+  const target = set.replace(/\/$/, "") + url.pathname + url.search;
   return fetch(new Request(target, request));
 };

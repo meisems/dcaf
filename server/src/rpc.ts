@@ -1,9 +1,9 @@
 /**
  * NEAR JSON-RPC over a pool of endpoints.
  *
- * Reads go to the public endpoints (fastest healthy one first) and fail over on network
- * errors, timeouts, rate limits and 5xx. Private endpoints (Lava, dRPC, …) are the last resort
- * for reads and the first choice for transactions. Keys live inside private URLs, so URLs are
+ * Reads go to the private endpoints (Lava, dRPC, GetBlock…; fastest healthy one first) and fall
+ * back to the public NEAR endpoints on network errors, timeouts, rate limits and 5xx.
+ * Transactions go to the private endpoints in the order given. Keys live inside private URLs, so URLs are
  * never logged or exposed: only hostnames are.
  */
 
@@ -72,13 +72,13 @@ export class RpcPool {
     this.byLatency = byLatency;
   }
 
-  /** Healthy endpoints first, by observed latency; private ones after public ones for reads. */
+  /** Healthy endpoints first; for reads, private ones before public ones, each by observed latency. */
   order(now = Date.now()): Endpoint[] {
     const idx = new Map(this.eps.map((e, i) => [e, i]));
     return [...this.eps].sort(
       (a, b) =>
         Number(a.until > now) - Number(b.until > now) ||
-        (this.byLatency ? Number(a.priv) - Number(b.priv) || a.ms - b.ms : idx.get(a)! - idx.get(b)!),
+        (this.byLatency ? Number(b.priv) - Number(a.priv) || a.ms - b.ms : idx.get(a)! - idx.get(b)!),
     );
   }
 
