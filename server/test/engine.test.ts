@@ -222,3 +222,29 @@ test("the Streaks board only lists wallets that bought this window", () => {
   assert.deepEqual(s.board.next.map((x) => x.id), ["alice.near"]);
   assert.equal(s.info.topStreak, 2, "top streak still counts every live streak");
 });
+
+test("NEAR amounts: failed swaps net out, concentrated-pool swaps are read, the price survives a restart", async () => {
+  const { netRoundTrips, swapsOf } = await import("../src/indexer.ts");
+  const mv = (kind: Move["kind"], w: string, raw: string, tx = "t"): Move => ({ kind, w, raw, tx, receipt: "r", idx: 0 });
+
+  // an aggregator swap that failed: tokens went in and came straight back
+  assert.deepEqual(netRoundTrips([mv("sell", "fluffy.near", "100"), mv("buy", "fluffy.near", "100")]), [], "neither a sell nor a buy");
+  const part = netRoundTrips([mv("sell", "a.near", "100"), mv("buy", "a.near", "30")]);
+  assert.equal(part.length, 1);
+  assert.deepEqual([part[0].kind, part[0].raw], ["sell", "70"]);
+  assert.equal(netRoundTrips([mv("buy", "b.near", "5"), mv("sell", "c.near", "5")]).length, 2, "different wallets are untouched");
+
+  // a swap on Rhea's concentrated pools logs a dcl.ref event instead of "Swapped …"
+  const dcl = `EVENT_JSON:${JSON.stringify({ standard: "dcl.ref", event: "swap", data: [{ token_in: "wrap.near", amount_in: (2n * Y24).toString(), token_out: "dcainnear.tkn.near", amount_out: "500" }] })}`;
+  const tx = { transaction: { hash: "h" }, execution_outcome: {} as never, receipts: [{ execution_outcome: { block_height: 1, block_timestamp: 0, index: 0, id: "r", outcome: { executor_id: DEX, logs: [dcl], status: { SuccessValue: "" } } } }] };
+  const s = swapsOf(tx as never);
+  assert.equal(s.nearIn, 2n * Y24);
+  assert.equal(s.tokOut, 500n);
+
+  // the engine starts from the last traded price after a restart
+  const r = rig();
+  r.block([{ kind: "buy", w: "alice.near", near: 1 }]);
+  const before = r.engine.price;
+  assert.ok(before && before > 0);
+  assert.equal(new Engine(r.db).price, before);
+});

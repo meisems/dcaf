@@ -40,19 +40,29 @@ const isDex = (a: string) => CFG.dexes.has(a);
 const counts = (a: string) => !CFG.excluded.has(a);
 
 /** NEAR and token amounts swapped on the DEX across a whole transaction. */
-function swapsOf(tx: RawTx): Swap {
+export function swapsOf(tx: RawTx): Swap {
   const s: Swap = { nearIn: 0n, nearOut: 0n, tokIn: 0n, tokOut: 0n };
   for (const r of tx.receipts) {
     const o = r.execution_outcome.outcome;
     if (!isDex(o.executor_id) || "Failure" in o.status) continue;
-    for (const log of o.logs) {
-      const m = SWAP_RE.exec(log);
-      if (!m) continue;
-      const [, aIn, tIn, aOut, tOut] = m;
+    const add = (tIn: string, aIn: string, tOut: string, aOut: string) => {
       if (tIn === CFG.wrap) s.nearIn += BigInt(aIn);
       if (tOut === CFG.wrap) s.nearOut += BigInt(aOut);
       if (tIn === CFG.token) s.tokIn += BigInt(aIn);
       if (tOut === CFG.token) s.tokOut += BigInt(aOut);
+    };
+    for (const log of o.logs) {
+      const m = SWAP_RE.exec(log); // classic pools: "Swapped 5 a.near for 7 b.near"
+      if (m) add(m[2], m[1], m[4], m[3]);
+      else if (log.startsWith("EVENT_JSON:") && log.includes('"dcl.ref"')) {
+        // concentrated pools: {"standard":"dcl.ref","event":"swap","data":[{token_in, amount_in, token_out, amount_out}]}
+        try {
+          const ev = JSON.parse(log.slice(11)) as { event?: string; data?: Record<string, string>[] };
+          if (ev.event === "swap" && Array.isArray(ev.data)) for (const d of ev.data) add(d.token_in, d.amount_in, d.token_out, d.amount_out);
+        } catch {
+          /* not an event */
+        }
+      }
     }
   }
   return s;
@@ -162,6 +172,31 @@ export function feeIn(o: Outcome, r: Receipt | undefined, fee: string): bigint {
   return y;
 }
 
+/**
+ * Within one transaction, a wallet's tokens to and from DEXes are netted: a swap that failed and was
+ * sent back (or a buy-and-sell round trip) is not a sell, so it never knocks the wallet out. What is
+ * left is a single buy or a single sell of the difference.
+ */
+export function netRoundTrips(moves: Move[]): Move[] {
+  const groups = new Map<string, Move[]>();
+  for (const m of moves) {
+    if (m.kind !== "buy" && m.kind !== "sell") continue;
+    const k = `${m.tx}|${m.w}`;
+    groups.set(k, [...(groups.get(k) ?? []), m]);
+  }
+  const drop = new Set<Move>();
+  for (const g of groups.values()) {
+    const bought = g.filter((m) => m.kind === "buy").reduce((s, m) => s + BigInt(m.raw), 0n);
+    const sold = g.filter((m) => m.kind === "sell").reduce((s, m) => s + BigInt(m.raw), 0n);
+    if (!bought || !sold) continue;
+    const net = bought - sold;
+    const keep = net > 0n ? g.filter((m) => m.kind === "buy").at(-1) : net < 0n ? g.find((m) => m.kind === "sell") : undefined;
+    for (const m of g) if (m !== keep) drop.add(m);
+    if (keep) keep.raw = (net > 0n ? net : -net).toString();
+  }
+  return drop.size ? moves.filter((m) => !drop.has(m)) : moves;
+}
+
 export type Sink = {
   onBlock(b: ParsedBlock, swaps: Map<string, Swap>): void;
   /** the indexed chain clock moved forward (also when nothing happened) */
@@ -233,14 +268,18 @@ export async function indexPass(db: Db, sink: Sink, start: number, seen: Seen): 
   const refunds: Refunds = new Map();
   for (const { o, tx } of items) refundsOf(tx, o, refunds);
 
+  // token moves for every receipt first, so round trips can be netted across the whole transaction
+  const all = items.map(({ o, r, tx }) => ({ o, r, moves: movesOf(o, tx, refunds) }));
+  const kept = new Set(netRoundTrips(all.flatMap((x) => x.moves)));
+
   let cur: ParsedBlock | null = null;
   const flush = () => cur && (cur.moves.length || cur.fees) && sink.onBlock(cur, swaps);
-  for (const { o, r, tx } of items) {
+  for (const { o, r, moves } of all) {
     if (!cur || cur.height !== o.block_height) {
       flush();
       cur = { height: o.block_height, t: nsToS(o.block_timestamp), moves: [], fees: 0n };
     }
-    cur.moves.push(...movesOf(o, tx, refunds));
+    cur.moves.push(...moves.filter((m) => kept.has(m)));
     cur.fees = (cur.fees ?? 0n) + feeIn(o, r, CFG.feeAccount);
   }
   flush();
