@@ -150,7 +150,21 @@ function NavTimer() {
   const i = snap?.info;
   const open = !!i?.started && !!i.nextRoundAt;
   const anim = useWindowAnim(i?.windowStart ?? 0, i?.nextRoundAt ?? 0, open);
-  if (!i || !open) return null;
+  if (!i) return null;
+  if (!i.started) {
+    // before the first round: how far along the holder count is
+    const p = Math.min(1, i.holders / Math.max(1, i.rules.minHolders));
+    return (
+      <AppLink to="/live" className={`nav-timer${heroVisible ? " away" : ""}`} aria-label={`${i.holders} of ${i.rules.minHolders} holders; the first round starts at ${i.rules.minHolders}`}>
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden>
+          <circle cx="12" cy="12" r="9" className="nt-track" />
+          <circle cx="12" cy="12" r="9" pathLength={1} className="nt-arc" strokeDasharray={`${p} 1`} transform="rotate(-90 12 12)" />
+        </svg>
+        <span className="nt-hold"><b>{i.holders}</b>/{i.rules.minHolders} holders</span>
+      </AppLink>
+    );
+  }
+  if (!open) return null;
   const left = Math.max(0, i.nextRoundAt - now);
   return (
     <AppLink to="/live" className={`nav-timer${heroVisible ? " away" : ""}${left <= 60 ? " hot" : ""}`} aria-label={`Window ${i.windowNo}, ${mmss(left)} left`}>
