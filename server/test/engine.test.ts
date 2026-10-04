@@ -3,8 +3,8 @@ import { test } from "node:test";
 
 // configure before the engine modules read their config
 Object.assign(process.env, {
-  TOKEN_CONTRACT: "dcaf.tkn.near",
-  VAULT_ACCOUNT: "vault.dcaf.near",
+  TOKEN_CONTRACT: "dcainnear.tkn.near",
+  VAULT_ACCOUNT: "vault.dcainnear.near",
   DEX_ACCOUNTS: "v2.ref-finance.near",
   VAULT_PRIVATE_KEY: "",
   ROUND_MIN: "10",

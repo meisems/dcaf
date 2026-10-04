@@ -24,9 +24,9 @@ Two Cloudflare projects, both built straight from this GitHub repo. No CLI neede
 
 | Name | Type | Example |
 |---|---|---|
-| `TOKEN_CONTRACT` | Text | `dcaf.tkn.near` |
-| `TOKEN_SYMBOL` | Text | `DCAF` |
-| `VAULT_ACCOUNT` | Text | `vault.dcaf.near` |
+| `TOKEN_CONTRACT` | Text | `dcainnear.tkn.near` |
+| `TOKEN_SYMBOL` | Text | `DCA` |
+| `VAULT_ACCOUNT` | Text | `vault.dcainnear.near` |
 | `START_BLOCK` | Text | launch block height |
 | `REF_POOL_ID` | Text | TOKEN/wNEAR pool id on Rhea |
 | `FEE_BPS` | Text | `300` (3% creator fee) |
@@ -69,8 +69,8 @@ The fee split is never published: `/api/snapshot` omits `FEE_BPS` and `VAULT_BPS
 
 | Name | Example |
 |---|---|
-| `VITE_TOKEN_CONTRACT` | `dcaf.tkn.near` |
-| `VITE_TOKEN_SYMBOL` | `DCAF` |
+| `VITE_TOKEN_CONTRACT` | `dcainnear.tkn.near` |
+| `VITE_TOKEN_SYMBOL` | `DCA` |
 | `VITE_BUY_URL` | optional, default Rhea swap for the token |
 
 4. **Save and Deploy.**

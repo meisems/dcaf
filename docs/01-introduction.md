@@ -1,6 +1,6 @@
 # Introduction
 
-**dcaf** tracks everyone who is DCAing into the token on NEAR, and pays the most consistent buyers.
+**dcainnear** tracks everyone who is DCAing into the token on NEAR, and pays the most consistent buyers.
 
 - Time is cut into short, random **windows**.
 - Buy in a window and it counts toward your **streak**.

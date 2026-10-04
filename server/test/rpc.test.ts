@@ -3,8 +3,8 @@ import { test } from "node:test";
 import { KeyPair } from "near-api-js";
 
 Object.assign(process.env, {
-  TOKEN_CONTRACT: "dcaf.tkn.near",
-  VAULT_ACCOUNT: "vault.dcaf.near",
+  TOKEN_CONTRACT: "dcainnear.tkn.near",
+  VAULT_ACCOUNT: "vault.dcainnear.near",
   VAULT_PRIVATE_KEY: KeyPair.fromRandom("ed25519").toString(),
   RPC_URLS: "https://pub-a.test,https://pub-b.test",
   LAVA_RPC_URL: "https://lava.test/KEY",

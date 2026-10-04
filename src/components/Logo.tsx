@@ -1,7 +1,8 @@
 import { useId } from "react";
+import { BRAND } from "../config";
 
 /**
- * The dcaf mark: a green (unroasted) coffee bean, lit with SVG lighting filters.
+ * The dcainnear mark: a green (unroasted) coffee bean, lit with SVG lighting filters.
  * Its crease is a carved staircase: every step is one buy, and it only goes up.
  */
 export const STEPS = "M23.4 41.6v-3.4h5.7v-6.7h5.7v-6.7h5.7v-3.4";
@@ -72,7 +73,7 @@ export function Logo({ size = 32 }: { size?: number }) {
   return (
     <span className="logo">
       <Mark size={size} live />
-      <span className="logo-word">dcaf</span>
+      <span className="logo-word">{BRAND.name}</span>
     </span>
   );
 }
